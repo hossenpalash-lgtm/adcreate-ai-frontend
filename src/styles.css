@@ -34,12 +34,16 @@
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
-  --font-display: "Sora", "Plus Jakarta Sans", system-ui, sans-serif;
+  --font-display: "Playfair Display", "Inter", system-ui, serif;
   --font-sans: "Inter", "Plus Jakarta Sans", system-ui, sans-serif;
   --gradient-primary: linear-gradient(135deg, var(--primary), var(--primary-glow));
   --gradient-destructive: linear-gradient(135deg, var(--destructive), var(--destructive-glow));
   --gradient-success: linear-gradient(135deg, var(--success), var(--success-glow));
-  --shadow-card: 0 1px 2px oklch(0 0 0 / 0.04), 0 1px 3px oklch(0 0 0 / 0.06);
+  /* A hairline border expressed as a box-shadow (not an elevation shadow) —
+     every existing `style={{ boxShadow: "var(--shadow-card)" }}` card becomes
+     a flat white card with a 1px border instead of a soft drop shadow, with
+     no component changes needed. Matches Baki Khata's flat Airbnb-style look. */
+  --shadow-card: 0 0 0 1px var(--border);
 }
 
 :root {
@@ -49,7 +53,7 @@
      Baki.AI's deliberate single-accent choice, this app has ordinary
      success/error semantics since it isn't built around one urgent
      recording-state action. */
-  --radius: 0.75rem;
+  --radius: 0.85rem;
   --background: oklch(0.99 0.002 260);
   --foreground: oklch(0.22 0.01 260);
   --card: oklch(1 0 0);
