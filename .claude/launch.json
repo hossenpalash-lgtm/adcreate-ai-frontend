@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "adcreate-ai-frontend",
+      "runtimeExecutable": "bunx",
+      "runtimeArgs": ["vite", "dev"],
+      "port": 3001
+    }
+  ]
+}
