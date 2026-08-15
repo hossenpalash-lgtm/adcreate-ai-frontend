@@ -1,9 +1,12 @@
-import { Languages, Loader2 } from "lucide-react";
+import { ChevronDown, Languages, Loader2 } from "lucide-react";
 import { useState } from "react";
 
 // Free — translation is a cheap text-only call reusing captions already
 // paid for by the original generation, so there's no credit cost shown
-// here (unlike the image tools next to it).
+// here (unlike the image tools next to it). Collapsed by default so the
+// main result screen stays as simple as it was before this existed —
+// most users won't need it, so it shouldn't compete for attention with
+// the caption/download flow.
 const LANGUAGES = [
   "Spanish",
   "French",
@@ -22,7 +25,20 @@ export function TranslateCaptions({
   onTranslate: (language: string) => void;
   translating: boolean;
 }) {
+  const [expanded, setExpanded] = useState(false);
   const [language, setLanguage] = useState(LANGUAGES[0]);
+
+  if (!expanded) {
+    return (
+      <button
+        onClick={() => setExpanded(true)}
+        className="mb-4 flex w-full items-center justify-center gap-1 text-xs font-semibold text-muted-foreground"
+      >
+        Translate to another language
+        <ChevronDown className="h-3.5 w-3.5" />
+      </button>
+    );
+  }
 
   return (
     <div className="mb-4 flex items-center gap-2">

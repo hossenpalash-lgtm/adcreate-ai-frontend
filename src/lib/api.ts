@@ -115,6 +115,25 @@ export function translateCaptions(
   });
 }
 
+export interface ApiFetchProductLinkResponse {
+  title: string;
+  description: string;
+  image_base64: string | null;
+  mime_type: string | null;
+}
+
+export function fetchProductLink(url: string): Promise<ApiFetchProductLinkResponse> {
+  return apiFetch<ApiFetchProductLinkResponse>("/ads/fetch-product-link", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ url }),
+  });
+}
+
+export function base64ToFile(base64: string, mimeType: string, filename: string): File {
+  return new File([base64ToBlob(base64, mimeType)], filename, { type: mimeType });
+}
+
 export type BusinessCategory =
   | "retail"
   | "restaurant_cafe"

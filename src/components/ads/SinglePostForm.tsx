@@ -1,7 +1,9 @@
 import { useEffect, useRef, useState } from "react";
-import { AlertCircle, Camera, Download, Loader2, Megaphone, Sparkles } from "lucide-react";
+import { AlertCircle, Camera, ChevronDown, Download, Link2, Loader2, Megaphone, Sparkles } from "lucide-react";
 import {
+  base64ToFile,
   enhanceImage,
+  fetchProductLink,
   generateAd,
   generateAdImageVariant,
   removeBackground,
@@ -25,6 +27,9 @@ export function SinglePostForm({
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [useAiImage, setUseAiImage] = useState(false);
   const [description, setDescription] = useState("");
+  const [showLinkInput, setShowLinkInput] = useState(false);
+  const [productUrl, setProductUrl] = useState("");
+  const [fetchingLink, setFetchingLink] = useState(false);
   const [generating, setGenerating] = useState(false);
   const [generatingImage, setGeneratingImage] = useState(false);
   const [removingBackground, setRemovingBackground] = useState(false);
@@ -37,6 +42,7 @@ export function SinglePostForm({
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [compositedUrl, setCompositedUrl] = useState<string | null>(null);
   const [exportSizes, setExportSizes] = useState<AdSizeExports | null>(null);
+  const [showMoreSizes, setShowMoreSizes] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const hasResult = captions.length > 0 && images.length > 0;
@@ -116,6 +122,27 @@ export function SinglePostForm({
     }
   };
 
+  const handleFetchProductLink = async () => {
+    if (!productUrl.trim() || fetchingLink) return;
+    setFetchingLink(true);
+    setError(null);
+    try {
+      const r = await fetchProductLink(productUrl.trim());
+      setDescription([r.title, r.description].filter(Boolean).join(" — "));
+      if (r.image_base64) {
+        handleFileChange(base64ToFile(r.image_base64, r.mime_type || "image/jpeg", "product.jpg"));
+      } else {
+        handleUseAiImage();
+      }
+      setShowLinkInput(false);
+      setProductUrl("");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Couldn't fetch that link.");
+    } finally {
+      setFetchingLink(false);
+    }
+  };
+
   const handleRemoveBackground = async () => {
     if (removingBackground || (credits !== null && credits <= 0)) return;
     setRemovingBackground(true);
@@ -170,9 +197,12 @@ export function SinglePostForm({
     setSelectedImageIndex(0);
     setCompositedUrl(null);
     setExportSizes(null);
+    setShowMoreSizes(false);
     handleFileChange(null);
     setUseAiImage(false);
     setDescription("");
+    setShowLinkInput(false);
+    setProductUrl("");
     setError(null);
   };
 
@@ -235,12 +265,41 @@ export function SinglePostForm({
                   )}
                 </button>
                 {!previewUrl && (
-                  <button
-                    onClick={handleUseAiImage}
-                    className="mt-2 text-xs font-semibold text-primary underline-offset-2 hover:underline"
-                  >
-                    No photo? Generate one with AI
-                  </button>
+                  <div className="mt-2 flex flex-col items-center gap-2">
+                    <button
+                      onClick={handleUseAiImage}
+                      className="text-xs font-semibold text-primary underline-offset-2 hover:underline"
+                    >
+                      No photo? Generate one with AI
+                    </button>
+                    {!showLinkInput ? (
+                      <button
+                        onClick={() => setShowLinkInput(true)}
+                        className="flex items-center gap-1 text-xs font-semibold text-primary underline-offset-2 hover:underline"
+                      >
+                        <Link2 className="h-3 w-3" />
+                        Or paste a product link
+                      </button>
+                    ) : (
+                      <div className="flex w-full gap-2">
+                        <input
+                          type="url"
+                          value={productUrl}
+                          onChange={(e) => setProductUrl(e.target.value)}
+                          placeholder="https://yourstore.com/products/..."
+                          disabled={fetchingLink}
+                          className="flex-1 rounded-full border border-input bg-background px-3 py-2 text-xs text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                        />
+                        <button
+                          onClick={handleFetchProductLink}
+                          disabled={!productUrl.trim() || fetchingLink}
+                          className="flex shrink-0 items-center justify-center gap-1 rounded-full bg-secondary px-3 py-2 text-xs font-semibold text-secondary-foreground disabled:opacity-60"
+                        >
+                          {fetchingLink ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : "Fetch"}
+                        </button>
+                      </div>
+                    )}
+                  </div>
                 )}
               </>
             )}
@@ -349,24 +408,34 @@ export function SinglePostForm({
             <Download className="h-5 w-5" />
             Download image (Square)
           </a>
-          <div className="mb-3 flex gap-2">
-            <a
-              href={exportSizes?.feed}
-              download="ad-feed.jpg"
-              className="flex flex-1 items-center justify-center gap-1.5 rounded-full bg-secondary px-3 py-2.5 text-xs font-semibold text-secondary-foreground"
+          {!showMoreSizes ? (
+            <button
+              onClick={() => setShowMoreSizes(true)}
+              className="mb-3 flex w-full items-center justify-center gap-1 text-xs font-semibold text-muted-foreground"
             >
-              <Download className="h-3.5 w-3.5" />
-              Feed (4:5)
-            </a>
-            <a
-              href={exportSizes?.story}
-              download="ad-story.jpg"
-              className="flex flex-1 items-center justify-center gap-1.5 rounded-full bg-secondary px-3 py-2.5 text-xs font-semibold text-secondary-foreground"
-            >
-              <Download className="h-3.5 w-3.5" />
-              Story (9:16)
-            </a>
-          </div>
+              More sizes (Feed, Story)
+              <ChevronDown className="h-3.5 w-3.5" />
+            </button>
+          ) : (
+            <div className="mb-3 flex gap-2">
+              <a
+                href={exportSizes?.feed}
+                download="ad-feed.jpg"
+                className="flex flex-1 items-center justify-center gap-1.5 rounded-full bg-secondary px-3 py-2.5 text-xs font-semibold text-secondary-foreground"
+              >
+                <Download className="h-3.5 w-3.5" />
+                Feed (4:5)
+              </a>
+              <a
+                href={exportSizes?.story}
+                download="ad-story.jpg"
+                className="flex flex-1 items-center justify-center gap-1.5 rounded-full bg-secondary px-3 py-2.5 text-xs font-semibold text-secondary-foreground"
+              >
+                <Download className="h-3.5 w-3.5" />
+                Story (9:16)
+              </a>
+            </div>
+          )}
           <button
             onClick={handleReset}
             className="w-full rounded-full bg-secondary px-5 py-3 text-sm font-semibold text-secondary-foreground"

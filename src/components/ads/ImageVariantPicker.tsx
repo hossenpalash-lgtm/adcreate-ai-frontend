@@ -1,4 +1,5 @@
-import { Eraser, Loader2, Sparkles, Wand2 } from "lucide-react";
+import { ChevronDown, Eraser, Loader2, Sparkles, Wand2 } from "lucide-react";
+import { useState } from "react";
 
 // Unlike captions, each extra image costs a real credit (Gemini image
 // generation isn't cheap) — the button says so up front rather than
@@ -30,6 +31,8 @@ export function ImageVariantPicker({
   disabled: boolean;
 }) {
   const anyBusy = generating || removingBackground || enhancing;
+  const [showMore, setShowMore] = useState(false);
+  const hasEditTools = !!(onRemoveBackground || onEnhance);
 
   return (
     <div className="mb-4">
@@ -66,7 +69,16 @@ export function ImageVariantPicker({
           )}
           Generate another image (1 credit)
         </button>
-        {(onRemoveBackground || onEnhance) && (
+        {hasEditTools && !showMore && (
+          <button
+            onClick={() => setShowMore(true)}
+            className="flex w-full items-center justify-center gap-1 text-xs font-semibold text-muted-foreground"
+          >
+            More image tools
+            <ChevronDown className="h-3.5 w-3.5" />
+          </button>
+        )}
+        {hasEditTools && showMore && (
           <div className="flex gap-2">
             {onRemoveBackground && (
               <button
