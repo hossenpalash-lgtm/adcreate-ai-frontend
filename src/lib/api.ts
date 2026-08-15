@@ -55,20 +55,30 @@ export function fetchAdCredits(): Promise<ApiAdCredits> {
   return apiFetch<ApiAdCredits>("/ads/credits");
 }
 
-export function generateAd(itemDescription: string, file: File | null): Promise<ApiAdGenerateResponse> {
+export type AspectRatio = "square" | "feed" | "story";
+
+export function generateAd(
+  itemDescription: string,
+  file: File | null,
+  aspectRatio: AspectRatio = "square",
+): Promise<ApiAdGenerateResponse> {
   const formData = new FormData();
   if (file) formData.append("file", file);
-  const params = new URLSearchParams({ item_description: itemDescription });
+  const params = new URLSearchParams({ item_description: itemDescription, aspect_ratio: aspectRatio });
   return apiFetch<ApiAdGenerateResponse>(`/ads/generate?${params}`, {
     method: "POST",
     body: formData,
   });
 }
 
-export function generateAdImageVariant(itemDescription: string, file: File | null): Promise<ApiAdImageVariantResponse> {
+export function generateAdImageVariant(
+  itemDescription: string,
+  file: File | null,
+  aspectRatio: AspectRatio = "square",
+): Promise<ApiAdImageVariantResponse> {
   const formData = new FormData();
   if (file) formData.append("file", file);
-  const params = new URLSearchParams({ item_description: itemDescription });
+  const params = new URLSearchParams({ item_description: itemDescription, aspect_ratio: aspectRatio });
   return apiFetch<ApiAdImageVariantResponse>(`/ads/generate-image-variant?${params}`, {
     method: "POST",
     body: formData,
@@ -254,5 +264,30 @@ export function selectContentPlanPost(
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ caption, whatsapp_message: whatsappMessage, image_base64: imageBase64 }),
+  });
+}
+
+export interface ApiGeneratedPost {
+  id: string;
+  item_description: string;
+  facebook_caption: string;
+  whatsapp_message: string;
+  image_base64: string;
+  created_at: string;
+}
+
+export function fetchHistory(): Promise<{ posts: ApiGeneratedPost[] }> {
+  return apiFetch<{ posts: ApiGeneratedPost[] }>("/ads/history");
+}
+
+export function deleteHistoryPost(id: string): Promise<void> {
+  return apiFetch<void>(`/ads/history/${id}`, { method: "DELETE" });
+}
+
+export function suggestHashtags(itemDescription: string): Promise<{ hashtags: string[] }> {
+  return apiFetch<{ hashtags: string[] }>("/ads/suggest-hashtags", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ item_description: itemDescription }),
   });
 }

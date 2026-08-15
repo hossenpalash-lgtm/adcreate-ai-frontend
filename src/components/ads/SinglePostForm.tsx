@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { AlertCircle, Camera, ChevronDown, Download, Link2, Loader2, Megaphone, Sparkles } from "lucide-react";
+import { AlertCircle, Camera, Download, Link2, Loader2, Megaphone, Sparkles } from "lucide-react";
 import {
   base64ToFile,
   enhanceImage,
@@ -10,15 +10,22 @@ import {
   removeBackground,
   translateCaptions,
   type ApiAdCaptionVariant,
+  type AspectRatio,
 } from "@/lib/api";
 import { compositeImage, type BrandKit, type EditOptions } from "@/lib/canvas-text";
-import { exportAdSizes, type AdSizeExports } from "@/lib/image-export";
 import { CaptionPicker } from "./CaptionPicker";
 import { CarouselBuilder } from "./CarouselBuilder";
+import { HashtagPicker } from "./HashtagPicker";
 import { ImageVariantPicker } from "./ImageVariantPicker";
 import { QuickEditPanel } from "./QuickEditPanel";
 import { StockPhotoSearch } from "./StockPhotoSearch";
 import { TranslateCaptions } from "./TranslateCaptions";
+
+const ASPECT_RATIO_OPTIONS: { value: AspectRatio; label: string }[] = [
+  { value: "square", label: "Square" },
+  { value: "feed", label: "Feed (4:5)" },
+  { value: "story", label: "Story (9:16)" },
+];
 
 export function SinglePostForm({
   credits,
@@ -31,6 +38,7 @@ export function SinglePostForm({
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [useAiImage, setUseAiImage] = useState(false);
   const [description, setDescription] = useState("");
+  const [aspectRatio, setAspectRatio] = useState<AspectRatio>("square");
   const [showLinkInput, setShowLinkInput] = useState(false);
   const [productUrl, setProductUrl] = useState("");
   const [fetchingLink, setFetchingLink] = useState(false);
@@ -45,8 +53,6 @@ export function SinglePostForm({
   const [selectedCaptionIndex, setSelectedCaptionIndex] = useState(0);
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [compositedUrl, setCompositedUrl] = useState<string | null>(null);
-  const [exportSizes, setExportSizes] = useState<AdSizeExports | null>(null);
-  const [showMoreSizes, setShowMoreSizes] = useState(false);
   const [brandKit, setBrandKit] = useState<BrandKit>({});
   const [editedCaption, setEditedCaption] = useState("");
   const [fontScale, setFontScale] = useState(1);
@@ -89,18 +95,6 @@ export function SinglePostForm({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [images, selectedImageIndex, editedCaption, brandKit, fontScale, barPosition, barColorOverride, showLogo]);
 
-  // Also free/client-side — regenerates the feed/story crops whenever the
-  // composited image changes, so the download options are always ready.
-  useEffect(() => {
-    if (!compositedUrl) {
-      setExportSizes(null);
-      return;
-    }
-    exportAdSizes(compositedUrl)
-      .then(setExportSizes)
-      .catch(() => setExportSizes(null));
-  }, [compositedUrl]);
-
   // Revoke the previous object URL before creating a new one so switching
   // photos doesn't leak blob URLs for the lifetime of this screen.
   const handleFileChange = (f: File | null) => {
@@ -124,7 +118,7 @@ export function SinglePostForm({
     setGenerating(true);
     setError(null);
     try {
-      const r = await generateAd(description.trim(), useAiImage ? null : file);
+      const r = await generateAd(description.trim(), useAiImage ? null : file, aspectRatio);
       setCaptions(r.captions);
       setImages([r.banner_image_base64]);
       setSelectedCaptionIndex(0);
@@ -142,7 +136,7 @@ export function SinglePostForm({
     setGeneratingImage(true);
     setError(null);
     try {
-      const r = await generateAdImageVariant(description.trim(), useAiImage ? null : file);
+      const r = await generateAdImageVariant(description.trim(), useAiImage ? null : file, aspectRatio);
       setImages((prev) => [...prev, r.banner_image_base64]);
       setSelectedImageIndex(images.length);
       setCredits(r.credits_remaining);
@@ -227,8 +221,6 @@ export function SinglePostForm({
     setSelectedCaptionIndex(0);
     setSelectedImageIndex(0);
     setCompositedUrl(null);
-    setExportSizes(null);
-    setShowMoreSizes(false);
     setEditedCaption("");
     setFontScale(1);
     setBarPosition("bottom");
@@ -237,6 +229,7 @@ export function SinglePostForm({
     handleFileChange(null);
     setUseAiImage(false);
     setDescription("");
+    setAspectRatio("square");
     setShowLinkInput(false);
     setProductUrl("");
     setError(null);
@@ -355,6 +348,28 @@ export function SinglePostForm({
             />
           </div>
 
+          <div className="mb-6">
+            <label className="mb-2 block text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+              Format
+            </label>
+            <div className="flex gap-2">
+              {ASPECT_RATIO_OPTIONS.map((opt) => (
+                <button
+                  key={opt.value}
+                  onClick={() => setAspectRatio(opt.value)}
+                  className={[
+                    "flex-1 rounded-full px-3 py-2 text-xs font-semibold",
+                    aspectRatio === opt.value
+                      ? "bg-primary text-primary-foreground"
+                      : "bg-secondary text-secondary-foreground",
+                  ].join(" ")}
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
           {error && (
             <p className="mb-4 flex items-center gap-1.5 text-sm font-medium text-destructive">
               <AlertCircle className="h-4 w-4 shrink-0" />
@@ -434,6 +449,13 @@ export function SinglePostForm({
             onShowLogoChange={setShowLogo}
           />
 
+          <HashtagPicker
+            itemDescription={description}
+            onAppend={(tag) =>
+              setEditedCaption((prev) => (prev.includes(`#${tag}`) ? prev : `${prev} #${tag}`.trim()))
+            }
+          />
+
           <CarouselBuilder images={images} caption={editedCaption} brandKit={brandKit} editOptions={editOptions} />
 
           <div className="mb-6 rounded-2xl bg-card p-4" style={{ boxShadow: "var(--shadow-card)" }}>
@@ -453,42 +475,14 @@ export function SinglePostForm({
           )}
 
           <a
-            href={exportSizes?.square ?? compositedUrl ?? undefined}
-            download="ad-square.jpg"
-            className="mb-2 flex w-full items-center justify-center gap-2 rounded-full px-5 py-4 text-base font-semibold text-primary-foreground"
+            href={compositedUrl ?? undefined}
+            download="ad.jpg"
+            className="mb-3 flex w-full items-center justify-center gap-2 rounded-full px-5 py-4 text-base font-semibold text-primary-foreground"
             style={{ background: "var(--gradient-primary)" }}
           >
             <Download className="h-5 w-5" />
-            Download image (Square)
+            Download image
           </a>
-          {!showMoreSizes ? (
-            <button
-              onClick={() => setShowMoreSizes(true)}
-              className="mb-3 flex w-full items-center justify-center gap-1 text-xs font-semibold text-muted-foreground"
-            >
-              More sizes (Feed, Story)
-              <ChevronDown className="h-3.5 w-3.5" />
-            </button>
-          ) : (
-            <div className="mb-3 flex gap-2">
-              <a
-                href={exportSizes?.feed}
-                download="ad-feed.jpg"
-                className="flex flex-1 items-center justify-center gap-1.5 rounded-full bg-secondary px-3 py-2.5 text-xs font-semibold text-secondary-foreground"
-              >
-                <Download className="h-3.5 w-3.5" />
-                Feed (4:5)
-              </a>
-              <a
-                href={exportSizes?.story}
-                download="ad-story.jpg"
-                className="flex flex-1 items-center justify-center gap-1.5 rounded-full bg-secondary px-3 py-2.5 text-xs font-semibold text-secondary-foreground"
-              >
-                <Download className="h-3.5 w-3.5" />
-                Story (9:16)
-              </a>
-            </div>
-          )}
           <button
             onClick={handleReset}
             className="w-full rounded-full bg-secondary px-5 py-3 text-sm font-semibold text-secondary-foreground"
