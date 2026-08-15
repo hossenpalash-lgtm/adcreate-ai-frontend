@@ -17,6 +17,7 @@ import { CaptionPicker } from "./CaptionPicker";
 import { CarouselBuilder } from "./CarouselBuilder";
 import { ImageVariantPicker } from "./ImageVariantPicker";
 import { QuickEditPanel } from "./QuickEditPanel";
+import { StockPhotoSearch } from "./StockPhotoSearch";
 import { TranslateCaptions } from "./TranslateCaptions";
 
 export function SinglePostForm({
@@ -334,6 +335,7 @@ export function SinglePostForm({
                         </button>
                       </div>
                     )}
+                    <StockPhotoSearch onSelect={handleFileChange} />
                   </div>
                 )}
               </>

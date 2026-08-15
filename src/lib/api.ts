@@ -130,6 +130,31 @@ export function fetchProductLink(url: string): Promise<ApiFetchProductLinkRespon
   });
 }
 
+export interface ApiStockPhotoResult {
+  id: string;
+  thumbnail_url: string;
+  full_url: string;
+  photographer: string;
+}
+
+export function searchStockPhotos(query: string): Promise<{ results: ApiStockPhotoResult[] }> {
+  const params = new URLSearchParams({ query });
+  return apiFetch<{ results: ApiStockPhotoResult[] }>(`/ads/stock-photos?${params}`);
+}
+
+export interface ApiFetchStockPhotoResponse {
+  image_base64: string;
+  mime_type: string;
+}
+
+export function fetchStockPhoto(url: string): Promise<ApiFetchStockPhotoResponse> {
+  return apiFetch<ApiFetchStockPhotoResponse>("/ads/fetch-stock-photo", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ url }),
+  });
+}
+
 export function base64ToFile(base64: string, mimeType: string, filename: string): File {
   return new File([base64ToBlob(base64, mimeType)], filename, { type: mimeType });
 }
