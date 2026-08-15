@@ -75,6 +75,46 @@ export function generateAdImageVariant(itemDescription: string, file: File | nul
   });
 }
 
+// The generated banner images live in state as raw base64 PNG strings
+// (that's what the backend returns) — these two tools re-upload that same
+// image to a fresh Gemini edit call, so it needs converting back to a
+// file-like Blob for multipart upload.
+function base64ToBlob(base64: string, mimeType: string): Blob {
+  const byteChars = atob(base64);
+  const byteNumbers = new Array(byteChars.length);
+  for (let i = 0; i < byteChars.length; i++) byteNumbers[i] = byteChars.charCodeAt(i);
+  return new Blob([new Uint8Array(byteNumbers)], { type: mimeType });
+}
+
+export function removeBackground(imageBase64: string): Promise<ApiAdImageVariantResponse> {
+  const formData = new FormData();
+  formData.append("file", base64ToBlob(imageBase64, "image/png"), "image.png");
+  return apiFetch<ApiAdImageVariantResponse>("/ads/remove-background", {
+    method: "POST",
+    body: formData,
+  });
+}
+
+export function enhanceImage(imageBase64: string): Promise<ApiAdImageVariantResponse> {
+  const formData = new FormData();
+  formData.append("file", base64ToBlob(imageBase64, "image/png"), "image.png");
+  return apiFetch<ApiAdImageVariantResponse>("/ads/enhance-image", {
+    method: "POST",
+    body: formData,
+  });
+}
+
+export function translateCaptions(
+  captions: ApiAdCaptionVariant[],
+  targetLanguage: string,
+): Promise<{ captions: ApiAdCaptionVariant[] }> {
+  return apiFetch<{ captions: ApiAdCaptionVariant[] }>("/ads/translate-captions", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ captions, target_language: targetLanguage }),
+  });
+}
+
 export type BusinessCategory =
   | "retail"
   | "restaurant_cafe"

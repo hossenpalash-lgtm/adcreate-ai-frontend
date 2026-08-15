@@ -1,9 +1,18 @@
 import { useEffect, useRef, useState } from "react";
 import { AlertCircle, Camera, Download, Loader2, Megaphone, Sparkles } from "lucide-react";
-import { generateAd, generateAdImageVariant, type ApiAdCaptionVariant } from "@/lib/api";
+import {
+  enhanceImage,
+  generateAd,
+  generateAdImageVariant,
+  removeBackground,
+  translateCaptions,
+  type ApiAdCaptionVariant,
+} from "@/lib/api";
 import { compositeImage } from "@/lib/canvas-text";
+import { exportAdSizes, type AdSizeExports } from "@/lib/image-export";
 import { CaptionPicker } from "./CaptionPicker";
 import { ImageVariantPicker } from "./ImageVariantPicker";
+import { TranslateCaptions } from "./TranslateCaptions";
 
 export function SinglePostForm({
   credits,
@@ -18,12 +27,16 @@ export function SinglePostForm({
   const [description, setDescription] = useState("");
   const [generating, setGenerating] = useState(false);
   const [generatingImage, setGeneratingImage] = useState(false);
+  const [removingBackground, setRemovingBackground] = useState(false);
+  const [enhancing, setEnhancing] = useState(false);
+  const [translating, setTranslating] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [captions, setCaptions] = useState<ApiAdCaptionVariant[]>([]);
   const [images, setImages] = useState<string[]>([]);
   const [selectedCaptionIndex, setSelectedCaptionIndex] = useState(0);
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [compositedUrl, setCompositedUrl] = useState<string | null>(null);
+  const [exportSizes, setExportSizes] = useState<AdSizeExports | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const hasResult = captions.length > 0 && images.length > 0;
@@ -38,6 +51,18 @@ export function SinglePostForm({
       .catch(() => {});
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [images, captions, selectedImageIndex, selectedCaptionIndex]);
+
+  // Also free/client-side — regenerates the feed/story crops whenever the
+  // composited image changes, so the download options are always ready.
+  useEffect(() => {
+    if (!compositedUrl) {
+      setExportSizes(null);
+      return;
+    }
+    exportAdSizes(compositedUrl)
+      .then(setExportSizes)
+      .catch(() => setExportSizes(null));
+  }, [compositedUrl]);
 
   // Revoke the previous object URL before creating a new one so switching
   // photos doesn't leak blob URLs for the lifetime of this screen.
@@ -91,12 +116,60 @@ export function SinglePostForm({
     }
   };
 
+  const handleRemoveBackground = async () => {
+    if (removingBackground || (credits !== null && credits <= 0)) return;
+    setRemovingBackground(true);
+    setError(null);
+    try {
+      const r = await removeBackground(images[selectedImageIndex]);
+      setImages((prev) => [...prev, r.banner_image_base64]);
+      setSelectedImageIndex(images.length);
+      setCredits(r.credits_remaining);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Couldn't remove the background.");
+    } finally {
+      setRemovingBackground(false);
+    }
+  };
+
+  const handleEnhance = async () => {
+    if (enhancing || (credits !== null && credits <= 0)) return;
+    setEnhancing(true);
+    setError(null);
+    try {
+      const r = await enhanceImage(images[selectedImageIndex]);
+      setImages((prev) => [...prev, r.banner_image_base64]);
+      setSelectedImageIndex(images.length);
+      setCredits(r.credits_remaining);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Couldn't enhance the image.");
+    } finally {
+      setEnhancing(false);
+    }
+  };
+
+  const handleTranslate = async (language: string) => {
+    if (translating) return;
+    setTranslating(true);
+    setError(null);
+    try {
+      const r = await translateCaptions(captions, language);
+      setCaptions((prev) => [...prev, ...r.captions]);
+      setSelectedCaptionIndex(captions.length);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Couldn't translate the captions.");
+    } finally {
+      setTranslating(false);
+    }
+  };
+
   const handleReset = () => {
     setCaptions([]);
     setImages([]);
     setSelectedCaptionIndex(0);
     setSelectedImageIndex(0);
     setCompositedUrl(null);
+    setExportSizes(null);
     handleFileChange(null);
     setUseAiImage(false);
     setDescription("");
@@ -235,7 +308,11 @@ export function SinglePostForm({
             selectedIndex={selectedImageIndex}
             onSelect={setSelectedImageIndex}
             onGenerateMore={handleGenerateMoreImages}
+            onRemoveBackground={handleRemoveBackground}
+            onEnhance={handleEnhance}
             generating={generatingImage}
+            removingBackground={removingBackground}
+            enhancing={enhancing}
             disabled={credits !== null && credits <= 0}
           />
 
@@ -244,6 +321,8 @@ export function SinglePostForm({
             selectedIndex={selectedCaptionIndex}
             onSelect={setSelectedCaptionIndex}
           />
+
+          <TranslateCaptions onTranslate={handleTranslate} translating={translating} />
 
           <div className="mb-6 rounded-2xl bg-card p-4" style={{ boxShadow: "var(--shadow-card)" }}>
             <p className="mb-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
@@ -262,14 +341,32 @@ export function SinglePostForm({
           )}
 
           <a
-            href={compositedUrl ?? undefined}
-            download="ad.jpg"
-            className="mb-3 flex w-full items-center justify-center gap-2 rounded-full px-5 py-4 text-base font-semibold text-primary-foreground"
+            href={exportSizes?.square ?? compositedUrl ?? undefined}
+            download="ad-square.jpg"
+            className="mb-2 flex w-full items-center justify-center gap-2 rounded-full px-5 py-4 text-base font-semibold text-primary-foreground"
             style={{ background: "var(--gradient-primary)" }}
           >
             <Download className="h-5 w-5" />
-            Download image
+            Download image (Square)
           </a>
+          <div className="mb-3 flex gap-2">
+            <a
+              href={exportSizes?.feed}
+              download="ad-feed.jpg"
+              className="flex flex-1 items-center justify-center gap-1.5 rounded-full bg-secondary px-3 py-2.5 text-xs font-semibold text-secondary-foreground"
+            >
+              <Download className="h-3.5 w-3.5" />
+              Feed (4:5)
+            </a>
+            <a
+              href={exportSizes?.story}
+              download="ad-story.jpg"
+              className="flex flex-1 items-center justify-center gap-1.5 rounded-full bg-secondary px-3 py-2.5 text-xs font-semibold text-secondary-foreground"
+            >
+              <Download className="h-3.5 w-3.5" />
+              Story (9:16)
+            </a>
+          </div>
           <button
             onClick={handleReset}
             className="w-full rounded-full bg-secondary px-5 py-3 text-sm font-semibold text-secondary-foreground"
