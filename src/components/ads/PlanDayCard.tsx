@@ -8,7 +8,7 @@ import {
   type ApiAdGenerateResponse,
   type ApiContentPlanPost,
 } from "@/lib/api";
-import { compositeImage } from "@/lib/canvas-text";
+import { compositeImage, type BrandKit } from "@/lib/canvas-text";
 import { CaptionPicker } from "./CaptionPicker";
 import { ImageVariantPicker } from "./ImageVariantPicker";
 
@@ -32,12 +32,14 @@ export function PlanDayCard({
   post,
   credits,
   setCredits,
+  brandKit,
   onGenerated,
 }: {
   planId: string;
   post: ApiContentPlanPost;
   credits: number | null;
   setCredits: (n: number) => void;
+  brandKit?: BrandKit;
   onGenerated: (day: string, result: ApiAdGenerateResponse) => void;
 }) {
   const [file, setFile] = useState<File | null>(null);
@@ -71,11 +73,11 @@ export function PlanDayCard({
 
   useEffect(() => {
     if (!hasResult) return;
-    compositeImage(images[selectedImageIndex], captions[selectedCaptionIndex].facebook_caption)
+    compositeImage(images[selectedImageIndex], captions[selectedCaptionIndex].facebook_caption, brandKit)
       .then(setCompositedUrl)
       .catch(() => {});
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [images, captions, selectedImageIndex, selectedCaptionIndex]);
+  }, [images, captions, selectedImageIndex, selectedCaptionIndex, brandKit]);
 
   const handleFileChange = (f: File | null) => {
     setPreviewUrl((prev) => {

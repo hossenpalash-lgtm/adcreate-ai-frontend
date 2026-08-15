@@ -151,17 +151,28 @@ export type BusinessCategory =
 
 export interface ApiBusinessProfile {
   category: BusinessCategory;
+  brand_color: string | null;
+  logo_base64: string | null;
+  logo_mime_type: string | null;
 }
 
 export function fetchBusinessProfile(): Promise<ApiBusinessProfile> {
   return apiFetch<ApiBusinessProfile>("/business-profile");
 }
 
-export function setBusinessProfile(category: BusinessCategory): Promise<ApiBusinessProfile> {
+// Partial update — omitted fields keep whatever's already saved
+// server-side, so the category picker and the Brand Kit panel can each
+// save independently without wiping the other's fields.
+export function setBusinessProfile(updates: {
+  category?: BusinessCategory;
+  brand_color?: string;
+  logo_base64?: string;
+  logo_mime_type?: string;
+}): Promise<ApiBusinessProfile> {
   return apiFetch<ApiBusinessProfile>("/business-profile", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ category }),
+    body: JSON.stringify(updates),
   });
 }
 

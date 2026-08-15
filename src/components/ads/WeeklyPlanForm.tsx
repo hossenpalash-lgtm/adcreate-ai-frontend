@@ -9,39 +9,9 @@ import {
   type ApiContentPlan,
   type BusinessCategory,
 } from "@/lib/api";
+import { CATEGORY_LABELS, CATEGORY_OPTIONS } from "@/lib/categories";
+import type { BrandKit } from "@/lib/canvas-text";
 import { PlanDayCard } from "./PlanDayCard";
-
-const CATEGORY_LABELS: Record<BusinessCategory, string> = {
-  retail: "Retail",
-  restaurant_cafe: "Restaurant/Cafe",
-  health_beauty: "Health/Beauty",
-  professional_services: "Professional Services",
-  home_services: "Home Services",
-  real_estate: "Real Estate",
-  automotive: "Automotive",
-  education_coaching: "Education/Coaching",
-  fitness_sports: "Fitness/Sports",
-  events_entertainment: "Events/Entertainment",
-  ecommerce: "Ecommerce",
-  technology_software: "Technology/Software",
-  other: "Other",
-};
-
-const CATEGORY_OPTIONS: BusinessCategory[] = [
-  "retail",
-  "restaurant_cafe",
-  "health_beauty",
-  "professional_services",
-  "home_services",
-  "real_estate",
-  "automotive",
-  "education_coaching",
-  "fitness_sports",
-  "events_entertainment",
-  "ecommerce",
-  "technology_software",
-  "other",
-];
 
 export function WeeklyPlanForm({
   credits,
@@ -51,6 +21,7 @@ export function WeeklyPlanForm({
   setCredits: (n: number) => void;
 }) {
   const [category, setCategory] = useState<BusinessCategory | null>(null);
+  const [brandKit, setBrandKit] = useState<BrandKit>({});
   const [showCategoryPicker, setShowCategoryPicker] = useState(false);
   const [plan, setPlan] = useState<ApiContentPlan | null>(null);
   const [inputText, setInputText] = useState("");
@@ -62,6 +33,12 @@ export function WeeklyPlanForm({
     Promise.all([fetchBusinessProfile(), fetchCurrentContentPlan()])
       .then(([profile, currentPlan]) => {
         setCategory(profile.category);
+        setBrandKit({
+          color: profile.brand_color,
+          logoDataUrl: profile.logo_base64
+            ? `data:${profile.logo_mime_type || "image/png"};base64,${profile.logo_base64}`
+            : null,
+        });
         setPlan(currentPlan);
       })
       .catch((err) => setError(err instanceof Error ? err.message : "Couldn't load your data."))
@@ -72,7 +49,7 @@ export function WeeklyPlanForm({
     setCategory(c);
     setShowCategoryPicker(false);
     try {
-      await setBusinessProfile(c);
+      await setBusinessProfile({ category: c });
     } catch {
       // Non-critical — the next plan generation will just fall back to
       // whatever category is actually saved server-side.
@@ -202,6 +179,7 @@ export function WeeklyPlanForm({
               post={post}
               credits={credits}
               setCredits={setCredits}
+              brandKit={brandKit}
               onGenerated={handlePostGenerated}
             />
           ))}

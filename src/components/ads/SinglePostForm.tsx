@@ -3,6 +3,7 @@ import { AlertCircle, Camera, ChevronDown, Download, Link2, Loader2, Megaphone, 
 import {
   base64ToFile,
   enhanceImage,
+  fetchBusinessProfile,
   fetchProductLink,
   generateAd,
   generateAdImageVariant,
@@ -10,7 +11,7 @@ import {
   translateCaptions,
   type ApiAdCaptionVariant,
 } from "@/lib/api";
-import { compositeImage } from "@/lib/canvas-text";
+import { compositeImage, type BrandKit } from "@/lib/canvas-text";
 import { exportAdSizes, type AdSizeExports } from "@/lib/image-export";
 import { CaptionPicker } from "./CaptionPicker";
 import { CarouselBuilder } from "./CarouselBuilder";
@@ -44,20 +45,34 @@ export function SinglePostForm({
   const [compositedUrl, setCompositedUrl] = useState<string | null>(null);
   const [exportSizes, setExportSizes] = useState<AdSizeExports | null>(null);
   const [showMoreSizes, setShowMoreSizes] = useState(false);
+  const [brandKit, setBrandKit] = useState<BrandKit>({});
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const hasResult = captions.length > 0 && images.length > 0;
+
+  useEffect(() => {
+    fetchBusinessProfile()
+      .then((profile) =>
+        setBrandKit({
+          color: profile.brand_color,
+          logoDataUrl: profile.logo_base64
+            ? `data:${profile.logo_mime_type || "image/png"};base64,${profile.logo_base64}`
+            : null,
+        }),
+      )
+      .catch(() => {});
+  }, []);
 
   // Recomposites (cheap, client-side canvas draw) whenever the user
   // switches which caption or which background image they want to use —
   // no new AI call needed, the text/image are already generated.
   useEffect(() => {
     if (!hasResult) return;
-    compositeImage(images[selectedImageIndex], captions[selectedCaptionIndex].facebook_caption)
+    compositeImage(images[selectedImageIndex], captions[selectedCaptionIndex].facebook_caption, brandKit)
       .then(setCompositedUrl)
       .catch(() => {});
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [images, captions, selectedImageIndex, selectedCaptionIndex]);
+  }, [images, captions, selectedImageIndex, selectedCaptionIndex, brandKit]);
 
   // Also free/client-side — regenerates the feed/story crops whenever the
   // composited image changes, so the download options are always ready.
