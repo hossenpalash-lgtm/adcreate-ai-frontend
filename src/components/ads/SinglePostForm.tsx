@@ -13,6 +13,7 @@ import {
 import { compositeImage } from "@/lib/canvas-text";
 import { exportAdSizes, type AdSizeExports } from "@/lib/image-export";
 import { CaptionPicker } from "./CaptionPicker";
+import { CarouselBuilder } from "./CarouselBuilder";
 import { ImageVariantPicker } from "./ImageVariantPicker";
 import { TranslateCaptions } from "./TranslateCaptions";
 
@@ -382,6 +383,8 @@ export function SinglePostForm({
           />
 
           <TranslateCaptions onTranslate={handleTranslate} translating={translating} />
+
+          <CarouselBuilder images={images} caption={captions[selectedCaptionIndex].facebook_caption} />
 
           <div className="mb-6 rounded-2xl bg-card p-4" style={{ boxShadow: "var(--shadow-card)" }}>
             <p className="mb-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
