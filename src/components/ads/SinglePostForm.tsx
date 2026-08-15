@@ -11,11 +11,12 @@ import {
   translateCaptions,
   type ApiAdCaptionVariant,
 } from "@/lib/api";
-import { compositeImage, type BrandKit } from "@/lib/canvas-text";
+import { compositeImage, type BrandKit, type EditOptions } from "@/lib/canvas-text";
 import { exportAdSizes, type AdSizeExports } from "@/lib/image-export";
 import { CaptionPicker } from "./CaptionPicker";
 import { CarouselBuilder } from "./CarouselBuilder";
 import { ImageVariantPicker } from "./ImageVariantPicker";
+import { QuickEditPanel } from "./QuickEditPanel";
 import { TranslateCaptions } from "./TranslateCaptions";
 
 export function SinglePostForm({
@@ -46,9 +47,15 @@ export function SinglePostForm({
   const [exportSizes, setExportSizes] = useState<AdSizeExports | null>(null);
   const [showMoreSizes, setShowMoreSizes] = useState(false);
   const [brandKit, setBrandKit] = useState<BrandKit>({});
+  const [editedCaption, setEditedCaption] = useState("");
+  const [fontScale, setFontScale] = useState(1);
+  const [barPosition, setBarPosition] = useState<"top" | "bottom">("bottom");
+  const [barColorOverride, setBarColorOverride] = useState<string | null | undefined>(undefined);
+  const [showLogo, setShowLogo] = useState(true);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const hasResult = captions.length > 0 && images.length > 0;
+  const editOptions: EditOptions = { fontScale, barPosition, barColorOverride, showLogo };
 
   useEffect(() => {
     fetchBusinessProfile()
@@ -63,16 +70,23 @@ export function SinglePostForm({
       .catch(() => {});
   }, []);
 
+  // Switching which AI caption variant is selected resets the editable
+  // text to that variant — editing is "adjust the picked caption", not a
+  // separate draft that survives switching which one you're adjusting.
+  useEffect(() => {
+    if (captions.length > 0) setEditedCaption(captions[selectedCaptionIndex].facebook_caption);
+  }, [selectedCaptionIndex, captions]);
+
   // Recomposites (cheap, client-side canvas draw) whenever the user
   // switches which caption or which background image they want to use —
   // no new AI call needed, the text/image are already generated.
   useEffect(() => {
-    if (!hasResult) return;
-    compositeImage(images[selectedImageIndex], captions[selectedCaptionIndex].facebook_caption, brandKit)
+    if (!hasResult || !editedCaption) return;
+    compositeImage(images[selectedImageIndex], editedCaption, brandKit, editOptions)
       .then(setCompositedUrl)
       .catch(() => {});
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [images, captions, selectedImageIndex, selectedCaptionIndex, brandKit]);
+  }, [images, selectedImageIndex, editedCaption, brandKit, fontScale, barPosition, barColorOverride, showLogo]);
 
   // Also free/client-side — regenerates the feed/story crops whenever the
   // composited image changes, so the download options are always ready.
@@ -214,6 +228,11 @@ export function SinglePostForm({
     setCompositedUrl(null);
     setExportSizes(null);
     setShowMoreSizes(false);
+    setEditedCaption("");
+    setFontScale(1);
+    setBarPosition("bottom");
+    setBarColorOverride(undefined);
+    setShowLogo(true);
     handleFileChange(null);
     setUseAiImage(false);
     setDescription("");
@@ -399,7 +418,21 @@ export function SinglePostForm({
 
           <TranslateCaptions onTranslate={handleTranslate} translating={translating} />
 
-          <CarouselBuilder images={images} caption={captions[selectedCaptionIndex].facebook_caption} />
+          <QuickEditPanel
+            captionText={editedCaption}
+            onCaptionChange={setEditedCaption}
+            fontScale={fontScale}
+            onFontScaleChange={setFontScale}
+            barPosition={barPosition}
+            onBarPositionChange={setBarPosition}
+            barColorOverride={barColorOverride}
+            onBarColorOverrideChange={setBarColorOverride}
+            hasLogo={!!brandKit.logoDataUrl}
+            showLogo={showLogo}
+            onShowLogoChange={setShowLogo}
+          />
+
+          <CarouselBuilder images={images} caption={editedCaption} brandKit={brandKit} editOptions={editOptions} />
 
           <div className="mb-6 rounded-2xl bg-card p-4" style={{ boxShadow: "var(--shadow-card)" }}>
             <p className="mb-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground">

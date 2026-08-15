@@ -1,20 +1,26 @@
 import { ChevronDown, Images, Loader2 } from "lucide-react";
 import { useState } from "react";
 import { zipSync } from "fflate";
-import { compositeImage } from "@/lib/canvas-text";
+import { compositeImage, type BrandKit, type EditOptions } from "@/lib/canvas-text";
 
 // Free — every image here was already paid for individually when it was
 // generated ("Generate another image" costs 1 credit each). This step is
 // pure client-side packaging: composite each selected image with the
-// current caption, zip them, download — ready to drag straight into
-// Facebook/Instagram's native carousel post creator, since this app
-// doesn't do direct posting (see Meta Business Verification blocker).
+// current caption (plus whatever Brand Kit / quick-edit styling is
+// active, so carousel slides match the main post), zip them, download —
+// ready to drag straight into Facebook/Instagram's native carousel post
+// creator, since this app doesn't do direct posting (see Meta Business
+// Verification blocker).
 export function CarouselBuilder({
   images,
   caption,
+  brandKit,
+  editOptions,
 }: {
   images: string[];
   caption: string;
+  brandKit?: BrandKit;
+  editOptions?: EditOptions;
 }) {
   const [expanded, setExpanded] = useState(false);
   const [selected, setSelected] = useState<Set<number>>(new Set());
@@ -38,7 +44,7 @@ export function CarouselBuilder({
       const indices = Array.from(selected).sort((a, b) => a - b);
       const files: Record<string, Uint8Array> = {};
       for (let slot = 0; slot < indices.length; slot++) {
-        const dataUrl = await compositeImage(images[indices[slot]], caption);
+        const dataUrl = await compositeImage(images[indices[slot]], caption, brandKit, editOptions);
         const base64 = dataUrl.split(",")[1];
         const binary = atob(base64);
         const bytes = new Uint8Array(binary.length);

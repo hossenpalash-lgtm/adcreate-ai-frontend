@@ -37,6 +37,17 @@ export interface BrandKit {
   logoDataUrl?: string | null;
 }
 
+// Per-post overrides on top of the Brand Kit defaults — the "quick edit"
+// panel. barColorOverride is tri-state: undefined = use brandKit.color,
+// null = force the default black bar for this post, a hex string = use
+// that color just for this post.
+export interface EditOptions {
+  fontScale?: number; // 1 = default; ~0.8 small, ~1.25 large
+  barPosition?: "top" | "bottom"; // default "bottom"
+  barColorOverride?: string | null;
+  showLogo?: boolean; // default true
+}
+
 function loadImage(src: string): Promise<HTMLImageElement> {
   const img = new Image();
   img.src = src;
@@ -50,7 +61,12 @@ function loadImage(src: string): Promise<HTMLImageElement> {
 // models render text poorly/unreliably, so the model only edits the
 // background and this step adds the actual words. Shared by both the
 // single-post form and the weekly-plan form's per-day generation.
-export async function compositeImage(base64: string, caption: string, brandKit?: BrandKit): Promise<string> {
+export async function compositeImage(
+  base64: string,
+  caption: string,
+  brandKit?: BrandKit,
+  editOptions?: EditOptions,
+): Promise<string> {
   const img = await loadImage(`data:image/png;base64,${base64}`);
 
   const canvas = document.createElement("canvas");
@@ -60,7 +76,8 @@ export async function compositeImage(base64: string, caption: string, brandKit?:
   if (!ctx) throw new Error("Could not create the image.");
   ctx.drawImage(img, 0, 0);
 
-  const fontSize = Math.round(canvas.width * 0.055);
+  const fontScale = editOptions?.fontScale ?? 1;
+  const fontSize = Math.round(canvas.width * 0.055 * fontScale);
   const fontStack = `700 ${fontSize}px "Inter", "Plus Jakarta Sans", sans-serif`;
   ctx.font = fontStack;
   const maxTextWidth = canvas.width * 0.88;
@@ -68,28 +85,44 @@ export async function compositeImage(base64: string, caption: string, brandKit?:
   const lineHeight = fontSize * 1.35;
   const padding = fontSize * 0.8;
   const barHeight = lines.length * lineHeight + padding * 2;
+  const barAtTop = editOptions?.barPosition === "top";
 
-  const barRgb = brandKit?.color ? hexToRgb(brandKit.color) : { r: 0, g: 0, b: 0 };
-  const textColor = brandKit?.color && isLight(barRgb) ? "#1a1a1a" : "#ffffff";
+  // undefined -> brand color, null -> explicit black, string -> that color
+  const effectiveColor = editOptions?.barColorOverride !== undefined ? editOptions.barColorOverride : brandKit?.color;
+  const barRgb = effectiveColor ? hexToRgb(effectiveColor) : { r: 0, g: 0, b: 0 };
+  const textColor = effectiveColor && isLight(barRgb) ? "#1a1a1a" : "#ffffff";
 
-  const gradient = ctx.createLinearGradient(0, canvas.height - barHeight, 0, canvas.height);
-  gradient.addColorStop(0, `rgba(${barRgb.r},${barRgb.g},${barRgb.b},0)`);
-  gradient.addColorStop(0.35, `rgba(${barRgb.r},${barRgb.g},${barRgb.b},0.8)`);
-  gradient.addColorStop(1, `rgba(${barRgb.r},${barRgb.g},${barRgb.b},0.92)`);
+  // The bar always fades from transparent (blending into the photo, at
+  // whichever edge is closest to the photo's center) to solid (at the
+  // actual image edge) — mirrored depending on which edge the bar sits on.
+  const barY = barAtTop ? 0 : canvas.height - barHeight;
+  const gradient = barAtTop
+    ? ctx.createLinearGradient(0, 0, 0, barHeight)
+    : ctx.createLinearGradient(0, canvas.height - barHeight, 0, canvas.height);
+  const rgb = `${barRgb.r},${barRgb.g},${barRgb.b}`;
+  if (barAtTop) {
+    gradient.addColorStop(0, `rgba(${rgb},0.92)`);
+    gradient.addColorStop(0.35, `rgba(${rgb},0.8)`);
+    gradient.addColorStop(1, `rgba(${rgb},0)`);
+  } else {
+    gradient.addColorStop(0, `rgba(${rgb},0)`);
+    gradient.addColorStop(0.35, `rgba(${rgb},0.8)`);
+    gradient.addColorStop(1, `rgba(${rgb},0.92)`);
+  }
   ctx.fillStyle = gradient;
-  ctx.fillRect(0, canvas.height - barHeight, canvas.width, barHeight);
+  ctx.fillRect(0, barY, canvas.width, barHeight);
 
   ctx.font = fontStack;
   ctx.fillStyle = textColor;
   ctx.textBaseline = "top";
-  let y = canvas.height - barHeight + padding;
+  let y = barY + padding;
   for (const line of lines) {
     const lineWidth = ctx.measureText(line).width;
     ctx.fillText(line, (canvas.width - lineWidth) / 2, y);
     y += lineHeight;
   }
 
-  if (brandKit?.logoDataUrl) {
+  if (brandKit?.logoDataUrl && editOptions?.showLogo !== false) {
     try {
       const logo = await loadImage(brandKit.logoDataUrl);
       const logoW = canvas.width * 0.16;
