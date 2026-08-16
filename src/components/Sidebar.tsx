@@ -1,4 +1,4 @@
-import { Binoculars, Calendar, Clock, LogOut, Megaphone, Palette, Sparkles } from "lucide-react";
+import { Binoculars, Calendar, Clock, Gift, LogOut, Megaphone, Palette, Sparkles } from "lucide-react";
 
 export type NavTab = "single" | "plan" | "history" | "competitor";
 
@@ -19,11 +19,13 @@ export function Sidebar({
   tab,
   onNavigate,
   onOpenBrandKit,
+  onOpenReferral,
   onSignOut,
 }: {
   tab: NavTab;
   onNavigate: (tab: NavTab) => void;
   onOpenBrandKit: () => void;
+  onOpenReferral: () => void;
   onSignOut: () => void;
 }) {
   return (
@@ -58,6 +60,13 @@ export function Sidebar({
           >
             <Palette className="h-4 w-4" />
             Brand Kit
+          </button>
+          <button
+            onClick={onOpenReferral}
+            className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold text-secondary-foreground hover:bg-secondary"
+          >
+            <Gift className="h-4 w-4" />
+            Invite &amp; Earn
           </button>
         </nav>
         <button
@@ -106,6 +115,13 @@ export function Sidebar({
             className="flex h-9 w-9 items-center justify-center rounded-full bg-secondary text-secondary-foreground"
           >
             <Palette className="h-4 w-4" />
+          </button>
+          <button
+            onClick={onOpenReferral}
+            aria-label="Invite & Earn"
+            className="flex h-9 w-9 items-center justify-center rounded-full bg-secondary text-secondary-foreground"
+          >
+            <Gift className="h-4 w-4" />
           </button>
           <button
             onClick={onSignOut}

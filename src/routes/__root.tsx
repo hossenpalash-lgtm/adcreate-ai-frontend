@@ -13,10 +13,14 @@ import { Loader2 } from "lucide-react";
 
 import appCss from "../styles.css?url";
 import { supabase, signOut, type Session } from "../lib/supabase";
+import { redeemReferral } from "../lib/api";
 import { Sentry } from "../lib/sentry";
 import { LoginScreen } from "../components/auth/LoginScreen";
 import { BrandKitPanel } from "../components/ads/BrandKitPanel";
+import { ReferralPanel } from "../components/ads/ReferralPanel";
 import { Sidebar, type NavTab } from "../components/Sidebar";
+
+const PENDING_REFERRAL_KEY = "adcreate_pending_ref";
 
 function NotFoundComponent() {
   return (
@@ -114,6 +118,7 @@ function RootComponent() {
   // undefined = still checking for an existing session, null = signed out
   const [session, setSession] = useState<Session | null | undefined>(undefined);
   const [brandKitOpen, setBrandKitOpen] = useState(false);
+  const [referralOpen, setReferralOpen] = useState(false);
   const navigate = useNavigate();
   // strict: false — root wraps every route generically, so it can't
   // assume it's on "/" the way index.tsx's own Route.useSearch() can.
@@ -137,6 +142,25 @@ function RootComponent() {
     return () => listener.subscription.unsubscribe();
   }, []);
 
+  // Stashed on first load (works whether the link was opened before or
+  // after signing up/in) so it survives the login/signup flow, then
+  // redeemed once a real session exists — the endpoint itself is
+  // idempotent (unique referee_id), so a re-run here from an auth-state
+  // refresh is harmless, not a double-grant risk.
+  useEffect(() => {
+    const ref = new URLSearchParams(window.location.search).get("ref");
+    if (ref) localStorage.setItem(PENDING_REFERRAL_KEY, ref);
+  }, []);
+
+  useEffect(() => {
+    if (!session) return;
+    const pending = localStorage.getItem(PENDING_REFERRAL_KEY);
+    if (!pending) return;
+    redeemReferral(pending)
+      .catch(() => {})
+      .finally(() => localStorage.removeItem(PENDING_REFERRAL_KEY));
+  }, [session]);
+
   return (
     <QueryClientProvider client={queryClient}>
       <div className="flex min-h-screen w-full flex-col bg-background lg:flex-row">
@@ -154,12 +178,14 @@ function RootComponent() {
               tab={tab}
               onNavigate={(t) => navigate({ to: "/", search: { tab: t } })}
               onOpenBrandKit={() => setBrandKitOpen(true)}
+              onOpenReferral={() => setReferralOpen(true)}
               onSignOut={() => signOut()}
             />
             <div className="mx-auto flex w-full max-w-md flex-1 flex-col lg:max-w-3xl">
               <Outlet />
             </div>
             <BrandKitPanel open={brandKitOpen} onClose={() => setBrandKitOpen(false)} />
+            <ReferralPanel open={referralOpen} onClose={() => setReferralOpen(false)} />
           </>
         )}
       </div>

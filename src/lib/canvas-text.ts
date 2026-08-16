@@ -200,5 +200,40 @@ export async function compositeImage(
     }
   }
 
+  drawWatermarkBadge(ctx, canvas.width, canvas.height);
+
   return canvas.toDataURL("image/jpeg", 0.92);
+}
+
+// Every generated ad gets posted publicly by the business that made it —
+// a small badge turns each one into free organic distribution for us, at
+// zero extra engineering cost since this one function already sits
+// between every flow (Single Post, Weekly Plan, Carousel) and the final
+// exported image. Unconditional for now since there's no paid tier yet
+// to gate it behind (no payment flow exists) — making it removable for
+// paying customers is a natural next step once one does. Placed top-right
+// since the defaults put the logo top-left and the caption bar at the
+// bottom edge; a user's own dragged caption/logo can still cover it, same
+// tradeoff every watermarked tool accepts.
+function drawWatermarkBadge(ctx: CanvasRenderingContext2D, canvasWidth: number, canvasHeight: number) {
+  const badgeText = "Made with AdCreate.AI";
+  const fontSize = Math.round(canvasWidth * 0.026);
+  ctx.font = `600 ${fontSize}px "Inter", "Plus Jakarta Sans", sans-serif`;
+  const textWidth = ctx.measureText(badgeText).width;
+  const padX = fontSize * 0.65;
+  const padY = fontSize * 0.5;
+  const badgeW = textWidth + padX * 2;
+  const badgeH = fontSize + padY * 2;
+  const margin = canvasWidth * 0.025;
+  const badgeX = canvasWidth - badgeW - margin;
+  const badgeY = margin;
+
+  ctx.fillStyle = "rgba(0,0,0,0.45)";
+  ctx.beginPath();
+  ctx.roundRect(badgeX, badgeY, badgeW, badgeH, badgeH / 2);
+  ctx.fill();
+
+  ctx.fillStyle = "rgba(255,255,255,0.92)";
+  ctx.textBaseline = "middle";
+  ctx.fillText(badgeText, badgeX + padX, badgeY + badgeH / 2 + fontSize * 0.05);
 }

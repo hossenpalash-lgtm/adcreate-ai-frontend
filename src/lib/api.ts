@@ -55,6 +55,29 @@ export function fetchAdCredits(): Promise<ApiAdCredits> {
   return apiFetch<ApiAdCredits>("/ads/credits");
 }
 
+export interface ApiReferralStatus {
+  referral_code: string;
+  successful_referrals: number;
+  max_referrals: number;
+}
+
+export function fetchReferralStatus(): Promise<ApiReferralStatus> {
+  return apiFetch<ApiReferralStatus>("/referral/status");
+}
+
+export interface ApiReferralRedeemResponse {
+  granted: boolean;
+  credits_remaining: number;
+}
+
+export function redeemReferral(referrerId: string): Promise<ApiReferralRedeemResponse> {
+  return apiFetch<ApiReferralRedeemResponse>("/referral/redeem", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ referrer_id: referrerId }),
+  });
+}
+
 export type AspectRatio = "square" | "feed" | "story";
 
 export function generateAd(
