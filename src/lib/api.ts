@@ -86,6 +86,7 @@ export type ApiVideoOperation = Record<string, unknown>;
 
 export interface ApiVideoOperationResponse {
   operation: ApiVideoOperation;
+  headline: string;
 }
 
 export function startVideoGeneration(
@@ -110,11 +111,11 @@ export interface ApiVideoStatusResponse {
   credits_remaining: number | null;
 }
 
-export function checkVideoStatus(operation: ApiVideoOperation): Promise<ApiVideoStatusResponse> {
+export function checkVideoStatus(operation: ApiVideoOperation, headline: string): Promise<ApiVideoStatusResponse> {
   return apiFetch<ApiVideoStatusResponse>("/ads/video-status", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ operation }),
+    body: JSON.stringify({ operation, headline }),
   });
 }
 

@@ -37,9 +37,15 @@ export function VideoPostForm({
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [videoUrl, setVideoUrl] = useState<string | null>(null);
+  const [headline, setHeadline] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
   const pollTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const elapsedIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  // poll() is a self-scheduling setTimeout chain — it needs the *current*
+  // headline at whatever moment the video finishes, not whatever it was
+  // when the chain started, since the user can keep editing it during the
+  // 1-2 minute wait. State alone would give poll() a stale closure value.
+  const headlineRef = useRef("");
 
   useEffect(() => {
     return () => {
@@ -60,7 +66,7 @@ export function VideoPostForm({
 
   const poll = async (operation: ApiVideoOperation) => {
     try {
-      const r = await checkVideoStatus(operation);
+      const r = await checkVideoStatus(operation, headlineRef.current);
       if (!r.done) {
         pollTimeoutRef.current = setTimeout(() => poll(operation), POLL_INTERVAL_MS);
         return;
@@ -88,6 +94,8 @@ export function VideoPostForm({
     try {
       const imageBase64 = file ? await fileToBase64(file) : undefined;
       const r = await startVideoGeneration(description.trim(), imageBase64, file?.type);
+      setHeadline(r.headline);
+      headlineRef.current = r.headline;
       pollTimeoutRef.current = setTimeout(() => poll(r.operation), POLL_INTERVAL_MS);
     } catch (err) {
       if (elapsedIntervalRef.current) clearInterval(elapsedIntervalRef.current);
@@ -102,6 +110,13 @@ export function VideoPostForm({
     setVideoUrl(null);
     setError(null);
     setElapsedSeconds(0);
+    setHeadline("");
+    headlineRef.current = "";
+  };
+
+  const handleHeadlineChange = (value: string) => {
+    setHeadline(value);
+    headlineRef.current = value;
   };
 
   const minutes = Math.floor(elapsedSeconds / 60);
@@ -134,12 +149,28 @@ export function VideoPostForm({
 
   if (generating) {
     return (
-      <div className="flex flex-col items-center justify-center gap-3 rounded-2xl bg-card py-16 text-center" style={{ boxShadow: "var(--shadow-card)" }}>
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-        <p className="text-sm font-semibold text-foreground">Generating your video...</p>
-        <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
-          <Clock className="h-3.5 w-3.5" />
-          {minutes}:{seconds.toString().padStart(2, "0")} elapsed — usually takes 1-2 minutes
+      <div className="rounded-2xl bg-card p-6" style={{ boxShadow: "var(--shadow-card)" }}>
+        <div className="mb-6 flex flex-col items-center justify-center gap-3 text-center">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          <p className="text-sm font-semibold text-foreground">Generating your video...</p>
+          <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
+            <Clock className="h-3.5 w-3.5" />
+            {minutes}:{seconds.toString().padStart(2, "0")} elapsed — usually takes 1-2 minutes
+          </p>
+        </div>
+        <label className="mb-2 block text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+          On-screen headline
+        </label>
+        <input
+          type="text"
+          value={headline}
+          onChange={(e) => handleHeadlineChange(e.target.value)}
+          placeholder="No headline — video will have no text"
+          maxLength={60}
+          className="w-full rounded-full border border-input bg-background px-4 py-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+        />
+        <p className="mt-2 text-xs text-muted-foreground">
+          This gets burned onto the video as a caption once it's ready — edit it any time while you wait, or clear it for no text.
         </p>
       </div>
     );
