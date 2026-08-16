@@ -1,17 +1,35 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { Sparkles } from "lucide-react";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { Calendar, Megaphone, Sparkles, Video } from "lucide-react";
 import { useEffect, useState } from "react";
 import { fetchAdCredits } from "@/lib/api";
 import { HistoryTab } from "@/components/ads/HistoryTab";
 import { SinglePostForm } from "@/components/ads/SinglePostForm";
 import { WeeklyPlanForm } from "@/components/ads/WeeklyPlanForm";
 
+type Tab = "single" | "plan" | "history";
+
 export const Route = createFileRoute("/")({
   component: HomeScreen,
+  validateSearch: (search: Record<string, unknown>): { tab: Tab } => ({
+    tab: search.tab === "plan" ? "plan" : search.tab === "history" ? "history" : "single",
+  }),
 });
 
+const CONTENT_TYPES: {
+  tab: Tab;
+  label: string;
+  description: string;
+  icon: typeof Megaphone;
+  comingSoon?: boolean;
+}[] = [
+  { tab: "single", label: "Single Post", description: "One ad, ready in seconds", icon: Megaphone },
+  { tab: "plan", label: "Weekly Plan", description: "A week of posts at once", icon: Calendar },
+  { tab: "single", label: "Video", description: "Coming soon", icon: Video, comingSoon: true },
+];
+
 function HomeScreen() {
-  const [tab, setTab] = useState<"single" | "plan" | "history">("single");
+  const { tab } = Route.useSearch();
+  const navigate = useNavigate();
   const [credits, setCredits] = useState<number | null>(null);
   const [creditsError, setCreditsError] = useState<string | null>(null);
 
@@ -20,6 +38,8 @@ function HomeScreen() {
       .then((c) => setCredits(c.credits))
       .catch((err) => setCreditsError(err instanceof Error ? err.message : "Couldn't load your credits."));
   }, []);
+
+  const goTo = (t: Tab) => navigate({ to: "/", search: { tab: t } });
 
   return (
     <main className="flex flex-1 flex-col px-6 py-6">
@@ -37,38 +57,40 @@ function HomeScreen() {
       </div>
       {creditsError && <p className="mb-4 text-sm text-destructive">{creditsError}</p>}
 
-      <div className="mb-5 flex gap-1 rounded-full bg-secondary p-1">
-        <button
-          onClick={() => setTab("single")}
-          className={[
-            "flex-1 rounded-full px-3 py-2 text-xs font-semibold transition-colors",
-            tab === "single" ? "bg-card text-foreground" : "text-secondary-foreground",
-          ].join(" ")}
-          style={tab === "single" ? { boxShadow: "var(--shadow-card)" } : undefined}
-        >
-          Single Post
-        </button>
-        <button
-          onClick={() => setTab("plan")}
-          className={[
-            "flex-1 rounded-full px-3 py-2 text-xs font-semibold transition-colors",
-            tab === "plan" ? "bg-card text-foreground" : "text-secondary-foreground",
-          ].join(" ")}
-          style={tab === "plan" ? { boxShadow: "var(--shadow-card)" } : undefined}
-        >
-          Weekly Plan
-        </button>
-        <button
-          onClick={() => setTab("history")}
-          className={[
-            "flex-1 rounded-full px-3 py-2 text-xs font-semibold transition-colors",
-            tab === "history" ? "bg-card text-foreground" : "text-secondary-foreground",
-          ].join(" ")}
-          style={tab === "history" ? { boxShadow: "var(--shadow-card)" } : undefined}
-        >
-          History
-        </button>
-      </div>
+      {tab !== "history" && (
+        <>
+          <h1 className="font-display mb-3 text-lg font-extrabold text-foreground">
+            Create Your Next Post
+          </h1>
+          <div className="mb-6 grid grid-cols-3 gap-2 lg:grid-cols-3">
+            {CONTENT_TYPES.map(({ tab: t, label, description, icon: Icon, comingSoon }, i) => (
+              <button
+                key={i}
+                onClick={() => !comingSoon && goTo(t)}
+                disabled={comingSoon}
+                className={[
+                  "flex flex-col items-center gap-2 rounded-2xl p-3 text-center transition-colors disabled:opacity-50",
+                  !comingSoon && tab === t
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-card text-foreground",
+                ].join(" ")}
+                style={comingSoon || tab !== t ? { boxShadow: "var(--shadow-card)" } : undefined}
+              >
+                <Icon className="h-6 w-6" />
+                <span className="text-xs font-semibold">{label}</span>
+                <span
+                  className={[
+                    "text-[10px]",
+                    !comingSoon && tab === t ? "text-primary-foreground/80" : "text-muted-foreground",
+                  ].join(" ")}
+                >
+                  {description}
+                </span>
+              </button>
+            ))}
+          </div>
+        </>
+      )}
 
       {tab === "single" && <SinglePostForm credits={credits} setCredits={setCredits} />}
       {tab === "plan" && <WeeklyPlanForm credits={credits} setCredits={setCredits} />}
