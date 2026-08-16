@@ -7,18 +7,17 @@ const FONT_SCALES: { label: string; value: number }[] = [
   { label: "Large", value: 1.25 },
 ];
 
-// A quick-edit panel, not a full drag-and-drop canvas editor — lets the
-// user override the caption text and a few compositeImage.ts knobs
-// (font size, bar position, bar color, logo visibility) per post,
-// without needing to touch Brand Kit's global defaults. Collapsed by
-// default, consistent with the other advanced tools on this screen.
+// A quick-edit panel for the non-spatial knobs — caption text, font size,
+// bar color, logo visibility. Position/size are handled separately by the
+// drag-and-drop editor directly on the preview image (see
+// DragDropEditor.tsx) rather than here, so this panel no longer has a
+// "text position" control. Collapsed by default, consistent with the
+// other advanced tools on this screen.
 export function QuickEditPanel({
   captionText,
   onCaptionChange,
   fontScale,
   onFontScaleChange,
-  barPosition,
-  onBarPositionChange,
   barColorOverride,
   onBarColorOverrideChange,
   hasLogo,
@@ -29,8 +28,6 @@ export function QuickEditPanel({
   onCaptionChange: (text: string) => void;
   fontScale: number;
   onFontScaleChange: (scale: number) => void;
-  barPosition: "top" | "bottom";
-  onBarPositionChange: (pos: "top" | "bottom") => void;
   barColorOverride: string | null | undefined;
   onBarColorOverrideChange: (color: string | null | undefined) => void;
   hasLogo: boolean;
@@ -82,24 +79,6 @@ export function QuickEditPanel({
             ].join(" ")}
           >
             {f.label}
-          </button>
-        ))}
-      </div>
-
-      <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-        Text position
-      </label>
-      <div className="mb-4 flex gap-2">
-        {(["top", "bottom"] as const).map((pos) => (
-          <button
-            key={pos}
-            onClick={() => onBarPositionChange(pos)}
-            className={[
-              "flex-1 rounded-full px-3 py-1.5 text-xs font-semibold capitalize",
-              barPosition === pos ? "bg-primary text-primary-foreground" : "bg-secondary text-secondary-foreground",
-            ].join(" ")}
-          >
-            {pos}
           </button>
         ))}
       </div>

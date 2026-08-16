@@ -12,9 +12,10 @@ import {
   type ApiAdCaptionVariant,
   type AspectRatio,
 } from "@/lib/api";
-import { compositeImage, type BrandKit, type EditOptions } from "@/lib/canvas-text";
+import { compositeImage, type Box, type BrandKit, type EditOptions } from "@/lib/canvas-text";
 import { CaptionPicker } from "./CaptionPicker";
 import { CarouselBuilder } from "./CarouselBuilder";
+import { DragDropEditor } from "./DragDropEditor";
 import { HashtagPicker } from "./HashtagPicker";
 import { IdeaInspiration } from "./IdeaInspiration";
 import { ImageVariantPicker } from "./ImageVariantPicker";
@@ -57,13 +58,15 @@ export function SinglePostForm({
   const [brandKit, setBrandKit] = useState<BrandKit>({});
   const [editedCaption, setEditedCaption] = useState("");
   const [fontScale, setFontScale] = useState(1);
-  const [barPosition, setBarPosition] = useState<"top" | "bottom">("bottom");
   const [barColorOverride, setBarColorOverride] = useState<string | null | undefined>(undefined);
   const [showLogo, setShowLogo] = useState(true);
+  const [textBox, setTextBox] = useState<Box | undefined>(undefined);
+  const [logoBox, setLogoBox] = useState<Box | undefined>(undefined);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const compositeRequestRef = useRef(0);
 
   const hasResult = captions.length > 0 && images.length > 0;
-  const editOptions: EditOptions = { fontScale, barPosition, barColorOverride, showLogo };
+  const editOptions: EditOptions = { fontScale, barColorOverride, showLogo, textBox, logoBox };
 
   useEffect(() => {
     fetchBusinessProfile()
@@ -86,15 +89,22 @@ export function SinglePostForm({
   }, [selectedCaptionIndex, captions]);
 
   // Recomposites (cheap, client-side canvas draw) whenever the user
-  // switches which caption or which background image they want to use —
-  // no new AI call needed, the text/image are already generated.
+  // switches which caption or which background image they want to use, or
+  // drags the caption/logo in the drag-and-drop editor — no new AI call
+  // needed, the text/image are already generated. Dragging fires this on
+  // every animation frame, so a request-id guard drops any stale resolve
+  // that lands after a newer drag position has already been requested —
+  // without it, fast drags could flicker back to an older frame.
   useEffect(() => {
     if (!hasResult || !editedCaption) return;
+    const requestId = ++compositeRequestRef.current;
     compositeImage(images[selectedImageIndex], editedCaption, brandKit, editOptions)
-      .then(setCompositedUrl)
+      .then((url) => {
+        if (compositeRequestRef.current === requestId) setCompositedUrl(url);
+      })
       .catch(() => {});
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [images, selectedImageIndex, editedCaption, brandKit, fontScale, barPosition, barColorOverride, showLogo]);
+  }, [images, selectedImageIndex, editedCaption, brandKit, fontScale, barColorOverride, showLogo, textBox, logoBox]);
 
   // Revoke the previous object URL before creating a new one so switching
   // photos doesn't leak blob URLs for the lifetime of this screen.
@@ -224,9 +234,10 @@ export function SinglePostForm({
     setCompositedUrl(null);
     setEditedCaption("");
     setFontScale(1);
-    setBarPosition("bottom");
     setBarColorOverride(undefined);
     setShowLogo(true);
+    setTextBox(undefined);
+    setLogoBox(undefined);
     handleFileChange(null);
     setUseAiImage(false);
     setDescription("");
@@ -408,14 +419,17 @@ export function SinglePostForm({
 
       {hasResult && (
         <>
-          <div
-            className="mb-3 overflow-hidden rounded-2xl bg-card"
-            style={{ boxShadow: "var(--shadow-card)" }}
-          >
-            {compositedUrl && (
-              <img src={compositedUrl} alt="Generated ad" className="w-full" />
-            )}
-          </div>
+          {compositedUrl && (
+            <DragDropEditor
+              imageUrl={compositedUrl}
+              textBox={textBox}
+              onTextBoxChange={setTextBox}
+              logoBox={logoBox}
+              onLogoBoxChange={setLogoBox}
+              hasLogo={!!brandKit.logoDataUrl}
+              showLogo={showLogo}
+            />
+          )}
 
           <ImageVariantPicker
             images={images}
@@ -443,8 +457,6 @@ export function SinglePostForm({
             onCaptionChange={setEditedCaption}
             fontScale={fontScale}
             onFontScaleChange={setFontScale}
-            barPosition={barPosition}
-            onBarPositionChange={setBarPosition}
             barColorOverride={barColorOverride}
             onBarColorOverrideChange={setBarColorOverride}
             hasLogo={!!brandKit.logoDataUrl}

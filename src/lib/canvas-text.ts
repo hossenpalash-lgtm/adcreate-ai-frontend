@@ -37,15 +37,29 @@ export interface BrandKit {
   logoDataUrl?: string | null;
 }
 
+// A freeform placement, all fields 0-1 relative to the canvas's own
+// width/height so it's resolution-independent — same box works whether
+// the source image is square, 4:5, or 9:16.
+export interface Box {
+  x: number; // left edge
+  y: number; // top edge
+  width: number;
+}
+
 // Per-post overrides on top of the Brand Kit defaults — the "quick edit"
 // panel. barColorOverride is tri-state: undefined = use brandKit.color,
 // null = force the default black bar for this post, a hex string = use
-// that color just for this post.
+// that color just for this post. textBox/logoBox are unset until the
+// user actually drags something in the drag-and-drop editor — until
+// then, rendering falls back to the original edge-anchored gradient bar
+// and fixed top-left logo badge, unchanged from before this existed.
 export interface EditOptions {
   fontScale?: number; // 1 = default; ~0.8 small, ~1.25 large
-  barPosition?: "top" | "bottom"; // default "bottom"
+  barPosition?: "top" | "bottom"; // default "bottom" — ignored once textBox is set
   barColorOverride?: string | null;
   showLogo?: boolean; // default true
+  textBox?: Box;
+  logoBox?: Box;
 }
 
 function loadImage(src: string): Promise<HTMLImageElement> {
@@ -80,61 +94,106 @@ export async function compositeImage(
   const fontSize = Math.round(canvas.width * 0.055 * fontScale);
   const fontStack = `700 ${fontSize}px "Inter", "Plus Jakarta Sans", sans-serif`;
   ctx.font = fontStack;
-  const maxTextWidth = canvas.width * 0.88;
-  const lines = wrapText(ctx, caption, maxTextWidth).slice(0, 5);
-  const lineHeight = fontSize * 1.35;
-  const padding = fontSize * 0.8;
-  const barHeight = lines.length * lineHeight + padding * 2;
-  const barAtTop = editOptions?.barPosition === "top";
 
   // undefined -> brand color, null -> explicit black, string -> that color
   const effectiveColor = editOptions?.barColorOverride !== undefined ? editOptions.barColorOverride : brandKit?.color;
   const barRgb = effectiveColor ? hexToRgb(effectiveColor) : { r: 0, g: 0, b: 0 };
   const textColor = effectiveColor && isLight(barRgb) ? "#1a1a1a" : "#ffffff";
-
-  // The bar always fades from transparent (blending into the photo, at
-  // whichever edge is closest to the photo's center) to solid (at the
-  // actual image edge) — mirrored depending on which edge the bar sits on.
-  const barY = barAtTop ? 0 : canvas.height - barHeight;
-  const gradient = barAtTop
-    ? ctx.createLinearGradient(0, 0, 0, barHeight)
-    : ctx.createLinearGradient(0, canvas.height - barHeight, 0, canvas.height);
   const rgb = `${barRgb.r},${barRgb.g},${barRgb.b}`;
-  if (barAtTop) {
-    gradient.addColorStop(0, `rgba(${rgb},0.92)`);
-    gradient.addColorStop(0.35, `rgba(${rgb},0.8)`);
-    gradient.addColorStop(1, `rgba(${rgb},0)`);
-  } else {
-    gradient.addColorStop(0, `rgba(${rgb},0)`);
-    gradient.addColorStop(0.35, `rgba(${rgb},0.8)`);
-    gradient.addColorStop(1, `rgba(${rgb},0.92)`);
-  }
-  ctx.fillStyle = gradient;
-  ctx.fillRect(0, barY, canvas.width, barHeight);
 
-  ctx.font = fontStack;
-  ctx.fillStyle = textColor;
-  ctx.textBaseline = "top";
-  let y = barY + padding;
-  for (const line of lines) {
-    const lineWidth = ctx.measureText(line).width;
-    ctx.fillText(line, (canvas.width - lineWidth) / 2, y);
-    y += lineHeight;
+  if (editOptions?.textBox) {
+    // Freeform mode (user dragged the caption in the drag-and-drop
+    // editor) — a solid rounded panel that can sit anywhere, since the
+    // edge-fade gradient below only makes visual sense anchored to an
+    // actual image edge.
+    const box = editOptions.textBox;
+    const boxX = box.x * canvas.width;
+    const boxY = box.y * canvas.height;
+    const boxWidth = box.width * canvas.width;
+    const padding = fontSize * 0.7;
+    const maxTextWidth = boxWidth - padding * 2;
+    const lines = wrapText(ctx, caption, maxTextWidth).slice(0, 5);
+    const lineHeight = fontSize * 1.35;
+    const boxHeight = lines.length * lineHeight + padding * 2;
+
+    ctx.fillStyle = `rgba(${rgb},0.88)`;
+    ctx.beginPath();
+    ctx.roundRect(boxX, boxY, boxWidth, boxHeight, fontSize * 0.3);
+    ctx.fill();
+
+    ctx.fillStyle = textColor;
+    ctx.textBaseline = "top";
+    let y = boxY + padding;
+    for (const line of lines) {
+      const lineWidth = ctx.measureText(line).width;
+      ctx.fillText(line, boxX + (boxWidth - lineWidth) / 2, y);
+      y += lineHeight;
+    }
+  } else {
+    const maxTextWidth = canvas.width * 0.88;
+    const lines = wrapText(ctx, caption, maxTextWidth).slice(0, 5);
+    const lineHeight = fontSize * 1.35;
+    const padding = fontSize * 0.8;
+    const barHeight = lines.length * lineHeight + padding * 2;
+    const barAtTop = editOptions?.barPosition === "top";
+
+    // The bar always fades from transparent (blending into the photo, at
+    // whichever edge is closest to the photo's center) to solid (at the
+    // actual image edge) — mirrored depending on which edge the bar sits on.
+    const barY = barAtTop ? 0 : canvas.height - barHeight;
+    const gradient = barAtTop
+      ? ctx.createLinearGradient(0, 0, 0, barHeight)
+      : ctx.createLinearGradient(0, canvas.height - barHeight, 0, canvas.height);
+    if (barAtTop) {
+      gradient.addColorStop(0, `rgba(${rgb},0.92)`);
+      gradient.addColorStop(0.35, `rgba(${rgb},0.8)`);
+      gradient.addColorStop(1, `rgba(${rgb},0)`);
+    } else {
+      gradient.addColorStop(0, `rgba(${rgb},0)`);
+      gradient.addColorStop(0.35, `rgba(${rgb},0.8)`);
+      gradient.addColorStop(1, `rgba(${rgb},0.92)`);
+    }
+    ctx.fillStyle = gradient;
+    ctx.fillRect(0, barY, canvas.width, barHeight);
+
+    ctx.font = fontStack;
+    ctx.fillStyle = textColor;
+    ctx.textBaseline = "top";
+    let y = barY + padding;
+    for (const line of lines) {
+      const lineWidth = ctx.measureText(line).width;
+      ctx.fillText(line, (canvas.width - lineWidth) / 2, y);
+      y += lineHeight;
+    }
   }
 
   if (brandKit?.logoDataUrl && editOptions?.showLogo !== false) {
     try {
       const logo = await loadImage(brandKit.logoDataUrl);
-      const logoW = canvas.width * 0.16;
-      const logoH = logoW * (logo.naturalHeight / logo.naturalWidth);
-      const pad = canvas.width * 0.03;
-      const plateW = logoW + pad;
-      const plateH = logoH + pad;
-      ctx.fillStyle = "rgba(255,255,255,0.92)";
-      ctx.beginPath();
-      ctx.roundRect(pad, pad, plateW, plateH, 10);
-      ctx.fill();
-      ctx.drawImage(logo, pad + pad / 2, pad + pad / 2, logoW, logoH);
+      if (editOptions?.logoBox) {
+        const box = editOptions.logoBox;
+        const logoW = box.width * canvas.width;
+        const logoH = logoW * (logo.naturalHeight / logo.naturalWidth);
+        const boxX = box.x * canvas.width;
+        const boxY = box.y * canvas.height;
+        const pad = logoW * 0.15;
+        ctx.fillStyle = "rgba(255,255,255,0.92)";
+        ctx.beginPath();
+        ctx.roundRect(boxX, boxY, logoW + pad, logoH + pad, 10);
+        ctx.fill();
+        ctx.drawImage(logo, boxX + pad / 2, boxY + pad / 2, logoW, logoH);
+      } else {
+        const logoW = canvas.width * 0.16;
+        const logoH = logoW * (logo.naturalHeight / logo.naturalWidth);
+        const pad = canvas.width * 0.03;
+        const plateW = logoW + pad;
+        const plateH = logoH + pad;
+        ctx.fillStyle = "rgba(255,255,255,0.92)";
+        ctx.beginPath();
+        ctx.roundRect(pad, pad, plateW, plateH, 10);
+        ctx.fill();
+        ctx.drawImage(logo, pad + pad / 2, pad + pad / 2, logoW, logoH);
+      }
     } catch {
       // Logo failed to load (corrupt data, etc.) — the post is still
       // useful without it, so this isn't worth failing the whole thing.
