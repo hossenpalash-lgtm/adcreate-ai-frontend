@@ -1,11 +1,12 @@
-import { Calendar, Clock, LogOut, Megaphone, Palette, Sparkles } from "lucide-react";
+import { Binoculars, Calendar, Clock, LogOut, Megaphone, Palette, Sparkles } from "lucide-react";
 
-export type NavTab = "single" | "plan" | "history";
+export type NavTab = "single" | "plan" | "history" | "competitor";
 
 const NAV_ITEMS: { tab: NavTab; label: string; icon: typeof Megaphone }[] = [
   { tab: "single", label: "Single Post", icon: Megaphone },
   { tab: "plan", label: "Weekly Plan", icon: Calendar },
   { tab: "history", label: "History", icon: Clock },
+  { tab: "competitor", label: "Competitor Analysis", icon: Binoculars },
 ];
 
 // One component, two renderings via Tailwind breakpoints rather than two
@@ -88,6 +89,16 @@ export function Sidebar({
             ].join(" ")}
           >
             <Clock className="h-4 w-4" />
+          </button>
+          <button
+            onClick={() => onNavigate("competitor")}
+            aria-label="Competitor Analysis"
+            className={[
+              "flex h-9 w-9 items-center justify-center rounded-full",
+              tab === "competitor" ? "bg-primary text-primary-foreground" : "bg-secondary text-secondary-foreground",
+            ].join(" ")}
+          >
+            <Binoculars className="h-4 w-4" />
           </button>
           <button
             onClick={onOpenBrandKit}

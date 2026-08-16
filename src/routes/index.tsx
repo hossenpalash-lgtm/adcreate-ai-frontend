@@ -2,16 +2,24 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { Calendar, Megaphone, Sparkles, Video } from "lucide-react";
 import { useEffect, useState } from "react";
 import { fetchAdCredits } from "@/lib/api";
+import { CompetitorAnalysis } from "@/components/ads/CompetitorAnalysis";
 import { HistoryTab } from "@/components/ads/HistoryTab";
 import { SinglePostForm } from "@/components/ads/SinglePostForm";
 import { WeeklyPlanForm } from "@/components/ads/WeeklyPlanForm";
 
-type Tab = "single" | "plan" | "history";
+type Tab = "single" | "plan" | "history" | "competitor";
 
 export const Route = createFileRoute("/")({
   component: HomeScreen,
   validateSearch: (search: Record<string, unknown>): { tab: Tab } => ({
-    tab: search.tab === "plan" ? "plan" : search.tab === "history" ? "history" : "single",
+    tab:
+      search.tab === "plan"
+        ? "plan"
+        : search.tab === "history"
+          ? "history"
+          : search.tab === "competitor"
+            ? "competitor"
+            : "single",
   }),
 });
 
@@ -57,7 +65,7 @@ function HomeScreen() {
       </div>
       {creditsError && <p className="mb-4 text-sm text-destructive">{creditsError}</p>}
 
-      {tab !== "history" && (
+      {(tab === "single" || tab === "plan") && (
         <>
           <h1 className="font-display mb-3 text-lg font-extrabold text-foreground">
             Create Your Next Post
@@ -95,6 +103,7 @@ function HomeScreen() {
       {tab === "single" && <SinglePostForm credits={credits} setCredits={setCredits} />}
       {tab === "plan" && <WeeklyPlanForm credits={credits} setCredits={setCredits} />}
       {tab === "history" && <HistoryTab />}
+      {tab === "competitor" && <CompetitorAnalysis />}
     </main>
   );
 }

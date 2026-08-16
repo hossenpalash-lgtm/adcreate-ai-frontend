@@ -308,3 +308,17 @@ export function fetchBlogToPosts(url: string): Promise<ApiBlogToPostsResponse> {
     body: JSON.stringify({ url }),
   });
 }
+
+export interface ApiCompetitorAnalysisResponse {
+  competitor_name: string;
+  summary: string;
+  differentiation_ideas: string[];
+}
+
+export function fetchCompetitorAnalysis(url: string): Promise<ApiCompetitorAnalysisResponse> {
+  return apiFetch<ApiCompetitorAnalysisResponse>("/ads/competitor-analysis", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ url }),
+  });
+}
