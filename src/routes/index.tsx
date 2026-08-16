@@ -5,9 +5,10 @@ import { fetchAdCredits } from "@/lib/api";
 import { CompetitorAnalysis } from "@/components/ads/CompetitorAnalysis";
 import { HistoryTab } from "@/components/ads/HistoryTab";
 import { SinglePostForm } from "@/components/ads/SinglePostForm";
+import { VideoPostForm } from "@/components/ads/VideoPostForm";
 import { WeeklyPlanForm } from "@/components/ads/WeeklyPlanForm";
 
-type Tab = "single" | "plan" | "history" | "competitor";
+type Tab = "single" | "plan" | "history" | "competitor" | "video";
 
 export const Route = createFileRoute("/")({
   component: HomeScreen,
@@ -19,7 +20,9 @@ export const Route = createFileRoute("/")({
           ? "history"
           : search.tab === "competitor"
             ? "competitor"
-            : "single",
+            : search.tab === "video"
+              ? "video"
+              : "single",
   }),
 });
 
@@ -28,11 +31,10 @@ const CONTENT_TYPES: {
   label: string;
   description: string;
   icon: typeof Megaphone;
-  comingSoon?: boolean;
 }[] = [
   { tab: "single", label: "Single Post", description: "One ad, ready in seconds", icon: Megaphone },
   { tab: "plan", label: "Weekly Plan", description: "A week of posts at once", icon: Calendar },
-  { tab: "single", label: "Video", description: "Coming soon", icon: Video, comingSoon: true },
+  { tab: "video", label: "Video", description: "A short video ad (10 credits)", icon: Video },
 ];
 
 function HomeScreen() {
@@ -65,31 +67,28 @@ function HomeScreen() {
       </div>
       {creditsError && <p className="mb-4 text-sm text-destructive">{creditsError}</p>}
 
-      {(tab === "single" || tab === "plan") && (
+      {(tab === "single" || tab === "plan" || tab === "video") && (
         <>
           <h1 className="font-display mb-3 text-lg font-extrabold text-foreground">
             Create Your Next Post
           </h1>
           <div className="mb-6 grid grid-cols-3 gap-2 lg:grid-cols-3">
-            {CONTENT_TYPES.map(({ tab: t, label, description, icon: Icon, comingSoon }, i) => (
+            {CONTENT_TYPES.map(({ tab: t, label, description, icon: Icon }, i) => (
               <button
                 key={i}
-                onClick={() => !comingSoon && goTo(t)}
-                disabled={comingSoon}
+                onClick={() => goTo(t)}
                 className={[
-                  "flex flex-col items-center gap-2 rounded-2xl p-3 text-center transition-colors disabled:opacity-50",
-                  !comingSoon && tab === t
-                    ? "bg-primary text-primary-foreground"
-                    : "bg-card text-foreground",
+                  "flex flex-col items-center gap-2 rounded-2xl p-3 text-center transition-colors",
+                  tab === t ? "bg-primary text-primary-foreground" : "bg-card text-foreground",
                 ].join(" ")}
-                style={comingSoon || tab !== t ? { boxShadow: "var(--shadow-card)" } : undefined}
+                style={tab !== t ? { boxShadow: "var(--shadow-card)" } : undefined}
               >
                 <Icon className="h-6 w-6" />
                 <span className="text-xs font-semibold">{label}</span>
                 <span
                   className={[
                     "text-[10px]",
-                    !comingSoon && tab === t ? "text-primary-foreground/80" : "text-muted-foreground",
+                    tab === t ? "text-primary-foreground/80" : "text-muted-foreground",
                   ].join(" ")}
                 >
                   {description}
@@ -102,6 +101,7 @@ function HomeScreen() {
 
       {tab === "single" && <SinglePostForm credits={credits} setCredits={setCredits} />}
       {tab === "plan" && <WeeklyPlanForm credits={credits} setCredits={setCredits} />}
+      {tab === "video" && <VideoPostForm credits={credits} setCredits={setCredits} />}
       {tab === "history" && <HistoryTab />}
       {tab === "competitor" && <CompetitorAnalysis />}
     </main>

@@ -132,7 +132,9 @@ function RootComponent() {
         ? "history"
         : search.tab === "competitor"
           ? "competitor"
-          : "single";
+          : search.tab === "video"
+            ? "video"
+            : "single";
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => setSession(data.session));

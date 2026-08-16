@@ -78,6 +78,46 @@ export function redeemReferral(referrerId: string): Promise<ApiReferralRedeemRes
   });
 }
 
+// Video generation is async under the hood (Veo takes 1-2+ minutes, far
+// past a normal request) — the operation object round-trips through the
+// client between start and each poll rather than being kept server-side,
+// so it survives a backend restart mid-generation. Treated as opaque here.
+export type ApiVideoOperation = Record<string, unknown>;
+
+export interface ApiVideoOperationResponse {
+  operation: ApiVideoOperation;
+}
+
+export function startVideoGeneration(
+  itemDescription: string,
+  imageBase64?: string,
+  imageMimeType?: string,
+): Promise<ApiVideoOperationResponse> {
+  return apiFetch<ApiVideoOperationResponse>("/ads/generate-video", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      item_description: itemDescription,
+      image_base64: imageBase64,
+      image_mime_type: imageMimeType,
+    }),
+  });
+}
+
+export interface ApiVideoStatusResponse {
+  done: boolean;
+  video_base64: string | null;
+  credits_remaining: number | null;
+}
+
+export function checkVideoStatus(operation: ApiVideoOperation): Promise<ApiVideoStatusResponse> {
+  return apiFetch<ApiVideoStatusResponse>("/ads/video-status", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ operation }),
+  });
+}
+
 export type AspectRatio = "square" | "feed" | "story";
 
 export function generateAd(

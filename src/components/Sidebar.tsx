@@ -1,6 +1,11 @@
 import { Binoculars, Calendar, Clock, Gift, LogOut, Megaphone, Palette, Sparkles } from "lucide-react";
 
-export type NavTab = "single" | "plan" | "history" | "competitor";
+// "video" has no dedicated nav row (same as "single"/"plan" — all three
+// are only reached via the content-type card grid on the home screen),
+// but still needs its own tab value so none of the sidebar's own rows
+// (Single Post, Weekly Plan, History, Competitor Analysis) incorrectly
+// show as active while a user is actually on the Video tab.
+export type NavTab = "single" | "plan" | "history" | "competitor" | "video";
 
 const NAV_ITEMS: { tab: NavTab; label: string; icon: typeof Megaphone }[] = [
   { tab: "single", label: "Single Post", icon: Megaphone },
