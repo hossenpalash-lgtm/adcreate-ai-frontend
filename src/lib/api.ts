@@ -291,3 +291,20 @@ export function suggestHashtags(itemDescription: string): Promise<{ hashtags: st
     body: JSON.stringify({ item_description: itemDescription }),
   });
 }
+
+export function fetchIdeaLabsIdeas(): Promise<{ ideas: string[] }> {
+  return apiFetch<{ ideas: string[] }>("/ads/idea-labs");
+}
+
+export interface ApiBlogToPostsResponse {
+  title: string;
+  ideas: string[];
+}
+
+export function fetchBlogToPosts(url: string): Promise<ApiBlogToPostsResponse> {
+  return apiFetch<ApiBlogToPostsResponse>("/ads/blog-to-posts", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ url }),
+  });
+}

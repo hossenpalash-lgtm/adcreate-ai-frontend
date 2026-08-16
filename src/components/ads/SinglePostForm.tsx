@@ -16,6 +16,7 @@ import { compositeImage, type BrandKit, type EditOptions } from "@/lib/canvas-te
 import { CaptionPicker } from "./CaptionPicker";
 import { CarouselBuilder } from "./CarouselBuilder";
 import { HashtagPicker } from "./HashtagPicker";
+import { IdeaInspiration } from "./IdeaInspiration";
 import { ImageVariantPicker } from "./ImageVariantPicker";
 import { QuickEditPanel } from "./QuickEditPanel";
 import { StockPhotoSearch } from "./StockPhotoSearch";
@@ -334,6 +335,8 @@ export function SinglePostForm({
               </>
             )}
           </div>
+
+          <IdeaInspiration onSelect={setDescription} />
 
           <div className="mb-6">
             <label className="mb-2 block text-xs font-semibold uppercase tracking-wider text-muted-foreground">
