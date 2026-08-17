@@ -83,6 +83,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         content: "Generate Facebook ad copy, banner images, and weekly content plans with AI.",
       },
       { property: "og:type", content: "website" },
+      { name: "facebook-domain-verification", content: "qmge0ogh6sbh0c79cu1zpwc1von0vq" },
     ],
     links: [
       { rel: "stylesheet", href: appCss },
