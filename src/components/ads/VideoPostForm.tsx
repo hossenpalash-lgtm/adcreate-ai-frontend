@@ -4,6 +4,7 @@ import {
   checkVideoStatus,
   startVideoGeneration,
   type ApiVideoOperation,
+  type VideoAspectRatio,
 } from "@/lib/api";
 
 const VIDEO_CREDIT_COST = 10;
@@ -31,6 +32,7 @@ export function VideoPostForm({
   setCredits: (n: number) => void;
 }) {
   const [description, setDescription] = useState("");
+  const [aspectRatio, setAspectRatio] = useState<VideoAspectRatio>("16:9");
   const [file, setFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [generating, setGenerating] = useState(false);
@@ -93,7 +95,7 @@ export function VideoPostForm({
     elapsedIntervalRef.current = setInterval(() => setElapsedSeconds((s) => s + 1), 1000);
     try {
       const imageBase64 = file ? await fileToBase64(file) : undefined;
-      const r = await startVideoGeneration(description.trim(), imageBase64, file?.type);
+      const r = await startVideoGeneration(description.trim(), imageBase64, file?.type, aspectRatio);
       setHeadline(r.headline);
       headlineRef.current = r.headline;
       pollTimeoutRef.current = setTimeout(() => poll(r.operation), POLL_INTERVAL_MS);
@@ -106,6 +108,7 @@ export function VideoPostForm({
 
   const handleReset = () => {
     setDescription("");
+    setAspectRatio("16:9");
     handleFileChange(null);
     setVideoUrl(null);
     setError(null);
@@ -225,6 +228,32 @@ export function VideoPostForm({
           rows={3}
           className="w-full rounded-2xl border border-input bg-background px-4 py-3 text-base text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
         />
+      </div>
+
+      <div className="mb-6">
+        <label className="mb-2 block text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+          Format
+        </label>
+        <div className="flex gap-2">
+          <button
+            onClick={() => setAspectRatio("16:9")}
+            className={[
+              "flex-1 rounded-full px-4 py-2.5 text-sm font-semibold",
+              aspectRatio === "16:9" ? "bg-primary text-primary-foreground" : "bg-secondary text-secondary-foreground",
+            ].join(" ")}
+          >
+            Landscape (16:9)
+          </button>
+          <button
+            onClick={() => setAspectRatio("9:16")}
+            className={[
+              "flex-1 rounded-full px-4 py-2.5 text-sm font-semibold",
+              aspectRatio === "9:16" ? "bg-primary text-primary-foreground" : "bg-secondary text-secondary-foreground",
+            ].join(" ")}
+          >
+            Vertical (9:16)
+          </button>
+        </div>
       </div>
 
       {error && (

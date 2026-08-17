@@ -89,10 +89,13 @@ export interface ApiVideoOperationResponse {
   headline: string;
 }
 
+export type VideoAspectRatio = "16:9" | "9:16";
+
 export function startVideoGeneration(
   itemDescription: string,
   imageBase64?: string,
   imageMimeType?: string,
+  aspectRatio: VideoAspectRatio = "16:9",
 ): Promise<ApiVideoOperationResponse> {
   return apiFetch<ApiVideoOperationResponse>("/ads/generate-video", {
     method: "POST",
@@ -101,6 +104,7 @@ export function startVideoGeneration(
       item_description: itemDescription,
       image_base64: imageBase64,
       image_mime_type: imageMimeType,
+      aspect_ratio: aspectRatio,
     }),
   });
 }
