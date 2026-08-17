@@ -216,7 +216,7 @@ export async function compositeImage(
 // bottom edge; a user's own dragged caption/logo can still cover it, same
 // tradeoff every watermarked tool accepts.
 function drawWatermarkBadge(ctx: CanvasRenderingContext2D, canvasWidth: number, canvasHeight: number) {
-  const badgeText = "Made with AdCreate.AI";
+  const badgeText = "Made with Punqle";
   const fontSize = Math.round(canvasWidth * 0.026);
   ctx.font = `600 ${fontSize}px "Inter", "Plus Jakarta Sans", sans-serif`;
   const textWidth = ctx.measureText(badgeText).width;

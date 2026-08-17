@@ -45,7 +45,7 @@ export function Sidebar({
           >
             <Sparkles className="h-4 w-4" />
           </div>
-          <span className="font-display text-base font-extrabold text-foreground">AdCreate.AI</span>
+          <span className="font-display text-base font-extrabold text-foreground">Punqle</span>
         </div>
         <nav className="flex flex-1 flex-col gap-1">
           {NAV_ITEMS.map(({ tab: t, label, icon: Icon }) => (
@@ -100,7 +100,7 @@ export function Sidebar({
           >
             <Sparkles className="h-4 w-4" />
           </div>
-          <span className="font-display text-sm font-extrabold text-foreground">AdCreate.AI</span>
+          <span className="font-display text-sm font-extrabold text-foreground">Punqle</span>
         </div>
         <div className="flex items-center gap-2">
           <button

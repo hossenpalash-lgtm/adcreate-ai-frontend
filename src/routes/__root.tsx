@@ -21,7 +21,7 @@ import { ProductCatalogPanel } from "../components/ads/ProductCatalogPanel";
 import { ReferralPanel } from "../components/ads/ReferralPanel";
 import { Sidebar, type NavTab } from "../components/Sidebar";
 
-const PENDING_REFERRAL_KEY = "adcreate_pending_ref";
+const PENDING_REFERRAL_KEY = "punqle_pending_ref";
 
 function NotFoundComponent() {
   return (
@@ -33,7 +33,7 @@ function NotFoundComponent() {
           href="/"
           className="mt-6 inline-flex rounded-full bg-primary px-6 py-3 font-semibold text-primary-foreground"
         >
-          Back to AdCreate.AI
+          Back to Punqle
         </a>
       </div>
     </div>
@@ -72,12 +72,12 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover" },
       { name: "theme-color", content: "#ffffff" },
-      { title: "AdCreate.AI — AI ads for small businesses" },
+      { title: "Punqle — AI Ad Creation Platform for Small Businesses" },
       {
         name: "description",
-        content: "Generate Facebook ad copy, banner images, and weekly content plans for your small business with AI.",
+        content: "Punqle is an AI ad creation platform for small businesses — generate Facebook ad copy, banner images, and weekly content plans with AI.",
       },
-      { property: "og:title", content: "AdCreate.AI — AI ads for small businesses" },
+      { property: "og:title", content: "Punqle — AI Ad Creation Platform for Small Businesses" },
       {
         property: "og:description",
         content: "Generate Facebook ad copy, banner images, and weekly content plans with AI.",

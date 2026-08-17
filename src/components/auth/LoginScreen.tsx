@@ -44,7 +44,7 @@ export function LoginScreen() {
         <div className="flex h-14 w-14 items-center justify-center rounded-2xl text-primary-foreground" style={{ background: "var(--gradient-primary)" }}>
           <Sparkles className="h-7 w-7" />
         </div>
-        <h1 className="font-display text-2xl font-extrabold text-foreground">AdCreate.AI</h1>
+        <h1 className="font-display text-2xl font-extrabold text-foreground">Punqle</h1>
         <p className="text-sm text-muted-foreground">AI-generated ads and content plans for small businesses</p>
       </div>
 

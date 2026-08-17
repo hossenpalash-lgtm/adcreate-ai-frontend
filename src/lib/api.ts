@@ -1,4 +1,4 @@
-// Client for the AdCreate.AI backend (Supabase-backed).
+// Client for the Punqle backend (Supabase-backed).
 
 import { getAccessToken } from "./supabase";
 
