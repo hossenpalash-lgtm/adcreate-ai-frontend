@@ -156,6 +156,16 @@ function RootComponent() {
     if (ref) localStorage.setItem(PENDING_REFERRAL_KEY, ref);
   }, []);
 
+  // The Shopify OAuth callback redirects the whole browser back to "/"
+  // with ?shopify=connected or ?shopify=error — open the panel so the
+  // result is immediately visible instead of landing on a blank home
+  // screen. ProductCatalogPanel itself reads and clears the param.
+  useEffect(() => {
+    if (new URLSearchParams(window.location.search).has("shopify")) {
+      setProductCatalogOpen(true);
+    }
+  }, []);
+
   useEffect(() => {
     if (!session) return;
     const pending = localStorage.getItem(PENDING_REFERRAL_KEY);

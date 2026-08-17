@@ -417,6 +417,31 @@ export function fetchProductImage(url: string): Promise<ApiFetchProductImageResp
   });
 }
 
+export function getShopifyConnectUrl(shop: string): Promise<{ authorize_url: string }> {
+  return apiFetch<{ authorize_url: string }>("/shopify/connect-url", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ shop }),
+  });
+}
+
+export interface ApiShopifyStatus {
+  connected: boolean;
+  shop_domain: string | null;
+}
+
+export function fetchShopifyStatus(): Promise<ApiShopifyStatus> {
+  return apiFetch<ApiShopifyStatus>("/shopify/status");
+}
+
+export function disconnectShopify(): Promise<void> {
+  return apiFetch<void>("/shopify/disconnect", { method: "DELETE" });
+}
+
+export function syncShopifyProducts(): Promise<{ products: ApiImportedProduct[] }> {
+  return apiFetch<{ products: ApiImportedProduct[] }>("/shopify/sync", { method: "POST" });
+}
+
 export interface ApiCompetitorAnalysisResponse {
   competitor_name: string;
   summary: string;

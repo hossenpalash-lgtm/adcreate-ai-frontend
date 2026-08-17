@@ -1,6 +1,15 @@
-import { AlertCircle, Download, Loader2, Package, Trash2, Upload, X } from "lucide-react";
+import { AlertCircle, CheckCircle2, Download, Link2, Loader2, Package, RefreshCw, Trash2, Upload, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
-import { clearProducts, fetchProducts, importProductsCsv, type ApiImportedProduct } from "@/lib/api";
+import {
+  clearProducts,
+  disconnectShopify,
+  fetchProducts,
+  fetchShopifyStatus,
+  getShopifyConnectUrl,
+  importProductsCsv,
+  syncShopifyProducts,
+  type ApiImportedProduct,
+} from "@/lib/api";
 
 const SAMPLE_CSV = `name,description,price,image_url
 Handmade Ceramic Mug,Glazed stoneware mug, dishwasher safe,450,https://example.com/mug.jpg
@@ -28,17 +37,92 @@ export function ProductCatalogPanel({ open, onClose }: { open: boolean; onClose:
   const [importing, setImporting] = useState(false);
   const [clearing, setClearing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const [shopifyConnected, setShopifyConnected] = useState(false);
+  const [shopifyDomain, setShopifyDomain] = useState<string | null>(null);
+  const [showShopifyInput, setShowShopifyInput] = useState(false);
+  const [shopInput, setShopInput] = useState("");
+  const [connectingShopify, setConnectingShopify] = useState(false);
+  const [syncingShopify, setSyncingShopify] = useState(false);
+  const [disconnectingShopify, setDisconnectingShopify] = useState(false);
 
   useEffect(() => {
     if (!open) return;
     setLoading(true);
     setError(null);
-    fetchProducts()
-      .then((r) => setProducts(r.products))
+    setNotice(null);
+
+    // The OAuth callback redirects the whole browser back here with
+    // ?shopify=connected or ?shopify=error — surface that once, then
+    // clean the URL so it doesn't re-trigger on a later refresh.
+    const params = new URLSearchParams(window.location.search);
+    const shopifyResult = params.get("shopify");
+    if (shopifyResult === "connected") {
+      setNotice("Shopify store connected — tap Sync to pull in your products.");
+    } else if (shopifyResult === "error") {
+      setError("Couldn't connect your Shopify store. Please try again.");
+    }
+    if (shopifyResult) {
+      params.delete("shopify");
+      const newSearch = params.toString();
+      window.history.replaceState({}, "", window.location.pathname + (newSearch ? `?${newSearch}` : ""));
+    }
+
+    Promise.all([fetchProducts(), fetchShopifyStatus()])
+      .then(([productsRes, statusRes]) => {
+        setProducts(productsRes.products);
+        setShopifyConnected(statusRes.connected);
+        setShopifyDomain(statusRes.shop_domain);
+      })
       .catch((err) => setError(err instanceof Error ? err.message : "Couldn't load your product catalog."))
       .finally(() => setLoading(false));
   }, [open]);
+
+  const handleConnectShopify = async () => {
+    if (!shopInput.trim() || connectingShopify) return;
+    setConnectingShopify(true);
+    setError(null);
+    try {
+      const r = await getShopifyConnectUrl(shopInput.trim());
+      window.location.href = r.authorize_url;
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Couldn't connect to Shopify.");
+      setConnectingShopify(false);
+    }
+  };
+
+  const handleSyncShopify = async () => {
+    if (syncingShopify) return;
+    setSyncingShopify(true);
+    setError(null);
+    setNotice(null);
+    try {
+      const r = await syncShopifyProducts();
+      setProducts(r.products);
+      setNotice(`Synced ${r.products.length} product${r.products.length === 1 ? "" : "s"} from Shopify.`);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Couldn't sync your Shopify products.");
+    } finally {
+      setSyncingShopify(false);
+    }
+  };
+
+  const handleDisconnectShopify = async () => {
+    if (disconnectingShopify) return;
+    setDisconnectingShopify(true);
+    setError(null);
+    try {
+      await disconnectShopify();
+      setShopifyConnected(false);
+      setShopifyDomain(null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Couldn't disconnect Shopify.");
+    } finally {
+      setDisconnectingShopify(false);
+    }
+  };
 
   const handleImport = async (file: File | null) => {
     if (!file || importing) return;
@@ -89,7 +173,7 @@ export function ProductCatalogPanel({ open, onClose }: { open: boolean; onClose:
         </div>
 
         <p className="mb-4 text-sm text-muted-foreground">
-          Import your product list once from a CSV file — then pick any product while creating a post instead of typing it out each time.
+          Import your product list once — from a CSV file or your Shopify store — then pick any product while creating a post instead of typing it out each time.
         </p>
 
         <input
@@ -122,6 +206,67 @@ export function ProductCatalogPanel({ open, onClose }: { open: boolean; onClose:
         <p className="mb-4 text-xs text-muted-foreground">
           Works with a simple name/description/price/image_url file, or an export straight from Shopify or WooCommerce.
         </p>
+
+        <div className="mb-4 rounded-2xl border border-border bg-background p-3.5">
+          {shopifyConnected ? (
+            <>
+              <div className="mb-2 flex items-center gap-2 text-sm font-semibold text-foreground">
+                <CheckCircle2 className="h-4 w-4 shrink-0 text-primary" />
+                Connected to {shopifyDomain}
+              </div>
+              <div className="flex gap-2">
+                <button
+                  onClick={handleSyncShopify}
+                  disabled={syncingShopify}
+                  className="flex flex-1 items-center justify-center gap-1.5 rounded-full bg-secondary px-3 py-2 text-xs font-semibold text-secondary-foreground disabled:opacity-60"
+                >
+                  {syncingShopify ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />}
+                  Sync products
+                </button>
+                <button
+                  onClick={handleDisconnectShopify}
+                  disabled={disconnectingShopify}
+                  className="shrink-0 rounded-full px-3 py-2 text-xs font-semibold text-destructive underline-offset-2 hover:underline disabled:opacity-60"
+                >
+                  Disconnect
+                </button>
+              </div>
+            </>
+          ) : showShopifyInput ? (
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={shopInput}
+                onChange={(e) => setShopInput(e.target.value)}
+                placeholder="your-store.myshopify.com"
+                disabled={connectingShopify}
+                className="flex-1 rounded-full border border-input bg-card px-3 py-2 text-xs text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+              />
+              <button
+                onClick={handleConnectShopify}
+                disabled={!shopInput.trim() || connectingShopify}
+                className="flex shrink-0 items-center justify-center gap-1 rounded-full bg-secondary px-3 py-2 text-xs font-semibold text-secondary-foreground disabled:opacity-60"
+              >
+                {connectingShopify ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : "Connect"}
+              </button>
+            </div>
+          ) : (
+            <button
+              onClick={() => setShowShopifyInput(true)}
+              className="flex items-center gap-1.5 text-xs font-semibold text-primary underline-offset-2 hover:underline"
+            >
+              <Link2 className="h-3.5 w-3.5" />
+              Or connect your Shopify store directly
+            </button>
+          )}
+        </div>
+
+        {notice && (
+          <p className="mb-4 flex items-center gap-1.5 text-sm font-medium text-primary">
+            <CheckCircle2 className="h-4 w-4 shrink-0" />
+            {notice}
+          </p>
+        )}
 
         {error && (
           <p className="mb-4 flex items-center gap-1.5 text-sm font-medium text-destructive">
