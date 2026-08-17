@@ -110,6 +110,10 @@ export function LoginScreen() {
           {mode === "signin" ? "New here? Create an account" : "Already have an account? Sign in"}
         </button>
       </form>
+
+      <p className="mt-10 text-center text-xs text-muted-foreground">
+        Punqle is operated by HOSSEN, MD MOSHARRAF &middot; ABN 47 183 516 336
+      </p>
     </main>
   );
 }
