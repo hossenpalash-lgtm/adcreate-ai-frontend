@@ -27,6 +27,7 @@ export function BrandKitPanel({ open, onClose }: { open: boolean; onClose: () =>
   const [error, setError] = useState<string | null>(null);
   const [category, setCategory] = useState<BusinessCategory>("other");
   const [color, setColor] = useState(DEFAULT_COLOR);
+  const [brandName, setBrandName] = useState("");
   const [existingLogoDataUrl, setExistingLogoDataUrl] = useState<string | null>(null);
   const [newLogoFile, setNewLogoFile] = useState<File | null>(null);
   const [newLogoPreview, setNewLogoPreview] = useState<string | null>(null);
@@ -42,6 +43,7 @@ export function BrandKitPanel({ open, onClose }: { open: boolean; onClose: () =>
       .then((profile) => {
         setCategory(profile.category);
         setColor(profile.brand_color || DEFAULT_COLOR);
+        setBrandName(profile.brand_name || "");
         setExistingLogoDataUrl(
           profile.logo_base64 ? `data:${profile.logo_mime_type || "image/png"};base64,${profile.logo_base64}` : null,
         );
@@ -63,7 +65,11 @@ export function BrandKitPanel({ open, onClose }: { open: boolean; onClose: () =>
     setSaving(true);
     setError(null);
     try {
-      const updates: Parameters<typeof setBusinessProfile>[0] = { category, brand_color: color };
+      const updates: Parameters<typeof setBusinessProfile>[0] = {
+        category,
+        brand_color: color,
+        brand_name: brandName.trim(),
+      };
       if (newLogoFile) {
         updates.logo_base64 = await fileToBase64(newLogoFile);
         updates.logo_mime_type = newLogoFile.type || "image/png";
@@ -105,7 +111,7 @@ export function BrandKitPanel({ open, onClose }: { open: boolean; onClose: () =>
         ) : (
           <>
             <p className="mb-4 text-sm text-muted-foreground">
-              Set your business type, color, and logo once — every generated post will use them automatically.
+              Set your business type, color, logo, and name once — every generated post will use them automatically.
             </p>
 
             <div className="mb-5">
@@ -171,6 +177,23 @@ export function BrandKitPanel({ open, onClose }: { open: boolean; onClose: () =>
                   {previewSrc ? "Change logo" : "Upload a logo"}
                 </span>
               </button>
+            </div>
+
+            <div className="mb-6">
+              <label className="mb-2 block text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                Business name (optional)
+              </label>
+              <input
+                type="text"
+                value={brandName}
+                onChange={(e) => setBrandName(e.target.value)}
+                placeholder="e.g. Nova Coffee Roasters"
+                maxLength={60}
+                className="w-full rounded-full border border-input bg-background px-4 py-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+              />
+              <p className="mt-2 text-xs text-muted-foreground">
+                Shown as a small badge next to your logo on every generated post.
+              </p>
             </div>
 
             {error && (

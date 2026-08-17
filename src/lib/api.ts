@@ -253,6 +253,7 @@ export interface ApiBusinessProfile {
   brand_color: string | null;
   logo_base64: string | null;
   logo_mime_type: string | null;
+  brand_name: string | null;
 }
 
 export function fetchBusinessProfile(): Promise<ApiBusinessProfile> {
@@ -267,6 +268,7 @@ export function setBusinessProfile(updates: {
   brand_color?: string;
   logo_base64?: string;
   logo_mime_type?: string;
+  brand_name?: string;
 }): Promise<ApiBusinessProfile> {
   return apiFetch<ApiBusinessProfile>("/business-profile", {
     method: "POST",

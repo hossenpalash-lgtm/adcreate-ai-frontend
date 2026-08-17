@@ -35,6 +35,7 @@ function isLight({ r, g, b }: { r: number; g: number; b: number }): boolean {
 export interface BrandKit {
   color?: string | null;
   logoDataUrl?: string | null;
+  name?: string | null;
 }
 
 // A freeform placement, all fields 0-1 relative to the canvas's own
@@ -167,36 +168,75 @@ export async function compositeImage(
     }
   }
 
-  if (brandKit?.logoDataUrl && editOptions?.showLogo !== false) {
+  if (brandKit?.logoDataUrl && editOptions?.showLogo !== false && editOptions?.logoBox) {
+    // Freeform dragged position — logo only. The name pill below only
+    // renders in the default (non-dragged) position, since it doesn't
+    // have its own drag handle yet and would risk overlapping a logo
+    // the user moved elsewhere.
     try {
       const logo = await loadImage(brandKit.logoDataUrl);
-      if (editOptions?.logoBox) {
-        const box = editOptions.logoBox;
-        const logoW = box.width * canvas.width;
-        const logoH = logoW * (logo.naturalHeight / logo.naturalWidth);
-        const boxX = box.x * canvas.width;
-        const boxY = box.y * canvas.height;
-        const pad = logoW * 0.15;
-        ctx.fillStyle = "rgba(255,255,255,0.92)";
-        ctx.beginPath();
-        ctx.roundRect(boxX, boxY, logoW + pad, logoH + pad, 10);
-        ctx.fill();
-        ctx.drawImage(logo, boxX + pad / 2, boxY + pad / 2, logoW, logoH);
-      } else {
-        const logoW = canvas.width * 0.16;
-        const logoH = logoW * (logo.naturalHeight / logo.naturalWidth);
-        const pad = canvas.width * 0.03;
-        const plateW = logoW + pad;
-        const plateH = logoH + pad;
-        ctx.fillStyle = "rgba(255,255,255,0.92)";
-        ctx.beginPath();
-        ctx.roundRect(pad, pad, plateW, plateH, 10);
-        ctx.fill();
-        ctx.drawImage(logo, pad + pad / 2, pad + pad / 2, logoW, logoH);
-      }
+      const box = editOptions.logoBox;
+      const logoW = box.width * canvas.width;
+      const logoH = logoW * (logo.naturalHeight / logo.naturalWidth);
+      const boxX = box.x * canvas.width;
+      const boxY = box.y * canvas.height;
+      const pad = logoW * 0.15;
+      ctx.fillStyle = "rgba(255,255,255,0.92)";
+      ctx.beginPath();
+      ctx.roundRect(boxX, boxY, logoW + pad, logoH + pad, 10);
+      ctx.fill();
+      ctx.drawImage(logo, boxX + pad / 2, boxY + pad / 2, logoW, logoH);
     } catch {
       // Logo failed to load (corrupt data, etc.) — the post is still
       // useful without it, so this isn't worth failing the whole thing.
+    }
+  } else if ((brandKit?.logoDataUrl || brandKit?.name) && editOptions?.showLogo !== false && !editOptions?.logoBox) {
+    // Default top-left position — logo plate and/or a name pill next to
+    // it, mirroring how Facebook/Instagram ads pair a small profile
+    // picture with the page name.
+    const pad = canvas.width * 0.03;
+    let cursorX = pad;
+    let badgeHeight = 0;
+
+    let logo: HTMLImageElement | null = null;
+    if (brandKit?.logoDataUrl) {
+      try {
+        logo = await loadImage(brandKit.logoDataUrl);
+      } catch {
+        logo = null;
+      }
+    }
+
+    if (logo) {
+      const logoW = canvas.width * 0.16;
+      const logoH = logoW * (logo.naturalHeight / logo.naturalWidth);
+      const plateW = logoW + pad;
+      const plateH = logoH + pad;
+      badgeHeight = plateH;
+      ctx.fillStyle = "rgba(255,255,255,0.92)";
+      ctx.beginPath();
+      ctx.roundRect(cursorX, pad, plateW, plateH, 10);
+      ctx.fill();
+      ctx.drawImage(logo, cursorX + pad / 2, pad + pad / 2, logoW, logoH);
+      cursorX += plateW + pad * 0.5;
+    }
+
+    if (brandKit?.name) {
+      const nameFontSize = Math.round(canvas.width * 0.032);
+      ctx.font = `700 ${nameFontSize}px "Inter", "Plus Jakarta Sans", sans-serif`;
+      const textWidth = ctx.measureText(brandKit.name).width;
+      const namePadX = nameFontSize * 0.6;
+      const nameBadgeH = badgeHeight || nameFontSize + nameFontSize * 0.9;
+      const nameBadgeW = textWidth + namePadX * 2;
+
+      ctx.fillStyle = "rgba(255,255,255,0.92)";
+      ctx.beginPath();
+      ctx.roundRect(cursorX, pad, nameBadgeW, nameBadgeH, nameBadgeH / 2);
+      ctx.fill();
+
+      ctx.fillStyle = "#1a1a1a";
+      ctx.textBaseline = "middle";
+      ctx.fillText(brandKit.name, cursorX + namePadX, pad + nameBadgeH / 2);
     }
   }
 

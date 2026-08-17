@@ -38,6 +38,7 @@ export function WeeklyPlanForm({
           logoDataUrl: profile.logo_base64
             ? `data:${profile.logo_mime_type || "image/png"};base64,${profile.logo_base64}`
             : null,
+          name: profile.brand_name,
         });
         setPlan(currentPlan);
       })
