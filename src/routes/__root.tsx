@@ -109,6 +109,11 @@ function RootShell({ children }: { children: ReactNode }) {
       </head>
       <body>
         {children}
+        {/* Visually hidden but present in the raw server-rendered HTML —
+            the app's own UI is client-rendered, so this is what lets
+            non-JS crawlers (e.g. Meta's business verification) see the
+            legal business name. */}
+        <p className="sr-only">Punqle is operated by HOSSEN, MD MOSHARRAF &middot; ABN 47 183 516 336</p>
         <Scripts />
       </body>
     </html>
