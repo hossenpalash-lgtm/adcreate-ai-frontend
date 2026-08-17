@@ -19,6 +19,7 @@ import { DragDropEditor } from "./DragDropEditor";
 import { HashtagPicker } from "./HashtagPicker";
 import { IdeaInspiration } from "./IdeaInspiration";
 import { ImageVariantPicker } from "./ImageVariantPicker";
+import { ProductPicker } from "./ProductPicker";
 import { QuickEditPanel } from "./QuickEditPanel";
 import { StockPhotoSearch } from "./StockPhotoSearch";
 import { TranslateCaptions } from "./TranslateCaptions";
@@ -341,6 +342,16 @@ export function SinglePostForm({
                       </div>
                     )}
                     <StockPhotoSearch onSelect={handleFileChange} />
+                    <ProductPicker
+                      onSelect={(description, photoFile) => {
+                        setDescription(description);
+                        if (photoFile) {
+                          handleFileChange(photoFile);
+                        } else {
+                          handleUseAiImage();
+                        }
+                      }}
+                    />
                   </div>
                 )}
               </>

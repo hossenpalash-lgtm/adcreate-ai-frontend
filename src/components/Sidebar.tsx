@@ -1,4 +1,4 @@
-import { Binoculars, Calendar, Clock, Gift, LogOut, Megaphone, Palette, Sparkles } from "lucide-react";
+import { Binoculars, Calendar, Clock, Gift, LogOut, Megaphone, Package, Palette, Sparkles } from "lucide-react";
 
 // "video" has no dedicated nav row (same as "single"/"plan" — all three
 // are only reached via the content-type card grid on the home screen),
@@ -24,12 +24,14 @@ export function Sidebar({
   tab,
   onNavigate,
   onOpenBrandKit,
+  onOpenProductCatalog,
   onOpenReferral,
   onSignOut,
 }: {
   tab: NavTab;
   onNavigate: (tab: NavTab) => void;
   onOpenBrandKit: () => void;
+  onOpenProductCatalog: () => void;
   onOpenReferral: () => void;
   onSignOut: () => void;
 }) {
@@ -65,6 +67,13 @@ export function Sidebar({
           >
             <Palette className="h-4 w-4" />
             Brand Kit
+          </button>
+          <button
+            onClick={onOpenProductCatalog}
+            className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold text-secondary-foreground hover:bg-secondary"
+          >
+            <Package className="h-4 w-4" />
+            Product Catalog
           </button>
           <button
             onClick={onOpenReferral}
@@ -120,6 +129,13 @@ export function Sidebar({
             className="flex h-9 w-9 items-center justify-center rounded-full bg-secondary text-secondary-foreground"
           >
             <Palette className="h-4 w-4" />
+          </button>
+          <button
+            onClick={onOpenProductCatalog}
+            aria-label="Product Catalog"
+            className="flex h-9 w-9 items-center justify-center rounded-full bg-secondary text-secondary-foreground"
+          >
+            <Package className="h-4 w-4" />
           </button>
           <button
             onClick={onOpenReferral}

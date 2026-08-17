@@ -373,6 +373,44 @@ export function fetchBlogToPosts(url: string): Promise<ApiBlogToPostsResponse> {
   });
 }
 
+export interface ApiImportedProduct {
+  id: string;
+  name: string;
+  description: string | null;
+  price: string | null;
+  image_url: string | null;
+}
+
+export function importProductsCsv(file: File): Promise<{ products: ApiImportedProduct[] }> {
+  const formData = new FormData();
+  formData.append("file", file);
+  return apiFetch<{ products: ApiImportedProduct[] }>("/products/import-csv", {
+    method: "POST",
+    body: formData,
+  });
+}
+
+export function fetchProducts(): Promise<{ products: ApiImportedProduct[] }> {
+  return apiFetch<{ products: ApiImportedProduct[] }>("/products");
+}
+
+export function clearProducts(): Promise<void> {
+  return apiFetch<void>("/products", { method: "DELETE" });
+}
+
+export interface ApiFetchProductImageResponse {
+  image_base64: string;
+  mime_type: string;
+}
+
+export function fetchProductImage(url: string): Promise<ApiFetchProductImageResponse> {
+  return apiFetch<ApiFetchProductImageResponse>("/products/fetch-image", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ url }),
+  });
+}
+
 export interface ApiCompetitorAnalysisResponse {
   competitor_name: string;
   summary: string;

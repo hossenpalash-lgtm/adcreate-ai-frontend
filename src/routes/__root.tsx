@@ -17,6 +17,7 @@ import { redeemReferral } from "../lib/api";
 import { Sentry } from "../lib/sentry";
 import { LoginScreen } from "../components/auth/LoginScreen";
 import { BrandKitPanel } from "../components/ads/BrandKitPanel";
+import { ProductCatalogPanel } from "../components/ads/ProductCatalogPanel";
 import { ReferralPanel } from "../components/ads/ReferralPanel";
 import { Sidebar, type NavTab } from "../components/Sidebar";
 
@@ -118,6 +119,7 @@ function RootComponent() {
   // undefined = still checking for an existing session, null = signed out
   const [session, setSession] = useState<Session | null | undefined>(undefined);
   const [brandKitOpen, setBrandKitOpen] = useState(false);
+  const [productCatalogOpen, setProductCatalogOpen] = useState(false);
   const [referralOpen, setReferralOpen] = useState(false);
   const navigate = useNavigate();
   // strict: false — root wraps every route generically, so it can't
@@ -180,6 +182,7 @@ function RootComponent() {
               tab={tab}
               onNavigate={(t) => navigate({ to: "/", search: { tab: t } })}
               onOpenBrandKit={() => setBrandKitOpen(true)}
+              onOpenProductCatalog={() => setProductCatalogOpen(true)}
               onOpenReferral={() => setReferralOpen(true)}
               onSignOut={() => signOut()}
             />
@@ -187,6 +190,7 @@ function RootComponent() {
               <Outlet />
             </div>
             <BrandKitPanel open={brandKitOpen} onClose={() => setBrandKitOpen(false)} />
+            <ProductCatalogPanel open={productCatalogOpen} onClose={() => setProductCatalogOpen(false)} />
             <ReferralPanel open={referralOpen} onClose={() => setReferralOpen(false)} />
           </>
         )}
