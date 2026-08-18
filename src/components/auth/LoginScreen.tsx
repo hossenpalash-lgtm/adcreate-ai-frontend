@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { signInWithPassword, signUpWithPassword } from "@/lib/supabase";
 import { useScrolled } from "@/lib/use-scrolled";
+import { AIToolMarquee } from "@/components/ToolMarquee";
 
 // Desktop-only floating photo cards around the login form — real
 // product-ad images generated once through Punqle's own /ads/generate
@@ -250,7 +251,11 @@ export function LoginScreen() {
         </button>
       </form>
 
-      <p className="relative z-10 mt-10 text-center text-xs text-muted-foreground">
+      <div className="relative z-10 mt-10 w-full">
+        <AIToolMarquee />
+      </div>
+
+      <p className="relative z-10 mt-6 text-center text-xs text-muted-foreground">
         Punqle is operated by HOSSEN, MD MOSHARRAF &middot; ABN 47 183 516 336
       </p>
     </main>

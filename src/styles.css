@@ -200,3 +200,42 @@
 .glass-nav-scrolled {
   background: rgba(255, 255, 255, 0.78);
 }
+
+/* Infinite tool-pill marquee (ToolMarquee.tsx). The track holds the
+   pill set twice back-to-back; translating by exactly -50% (one set's
+   width) makes the loop restart land on pixel-identical content, so
+   the reset is invisible. Row 2 plays the same keyframe in reverse
+   rather than needing a second keyframe, since "start at -50%, animate
+   to 0" is just this animation played backwards. */
+@keyframes marquee-left {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+.animate-marquee-left {
+  animation-name: marquee-left;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+}
+.animate-marquee-right {
+  animation-name: marquee-left;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+  animation-direction: reverse;
+}
+@media (prefers-reduced-motion: reduce) {
+  .animate-marquee-left,
+  .animate-marquee-right {
+    animation: none;
+  }
+  /* Without the animation holding the track at a translated offset,
+     both copies of the duplicated set would sit side by side — hide
+     the second (aria-hidden) copy so reduced-motion users see one
+     clean static row instead of the same pills twice. */
+  .marquee-set:nth-of-type(2) {
+    display: none;
+  }
+}
