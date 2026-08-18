@@ -155,14 +155,26 @@
    its own direction, matching the reference "burst from center" reveal. */
 @keyframes card-spread-in {
   from {
-    opacity: 0;
-    transform: translate(var(--spread-x), var(--spread-y)) scale(0.5) rotate(var(--spread-rotate));
+    opacity: 0.15;
+    filter: blur(6px);
+    transform: translate(var(--spread-x), var(--spread-y)) scale(0.72) rotate(var(--spread-rotate));
   }
   to {
     opacity: 1;
+    filter: blur(0);
     transform: translate(0, 0) scale(1) rotate(var(--spread-rotate));
   }
 }
 .animate-card-spread {
   animation: card-spread-in 0.9s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+/* Respect the OS-level motion preference — skip straight to the
+   resting state instead of forcing the radial-spread motion. */
+@media (prefers-reduced-motion: reduce) {
+  .animate-card-spread {
+    animation: none;
+    opacity: 1;
+    filter: none;
+    transform: rotate(var(--spread-rotate));
+  }
 }

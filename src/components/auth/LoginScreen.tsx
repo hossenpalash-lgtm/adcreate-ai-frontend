@@ -1,15 +1,26 @@
 import { useEffect, useRef, useState } from "react";
-import { Calendar, Clapperboard, Loader2, Megaphone, Palette, Sparkles } from "lucide-react";
+import {
+  Binoculars,
+  Calendar,
+  Clapperboard,
+  Clock,
+  Gift,
+  Loader2,
+  Megaphone,
+  Package,
+  Palette,
+  Sparkles,
+} from "lucide-react";
 import { signInWithPassword, signUpWithPassword } from "@/lib/supabase";
 
 // Desktop-only decorative cards around the login form — illustrative
 // icon+caption chips for real Punqle features (not fake AI-photo
-// screenshots pretending to be genuine output), giving the page some
-// of the "scattered, alive" energy of Arcads' own hero without
-// claiming a photorealistic result Punqle didn't actually generate.
-// Each card's spreadX/spreadY point back toward the center (opposite
-// of the corner it rests in) — that's where the burst-in animation
-// starts from, per the reference "center to corners" reveal.
+// screenshots pretending to be genuine output), framing the headline
+// as a floating collage. Positions use calc() (not translate-x-1/2)
+// for the center-column/middle-row cards specifically so the static
+// placement doesn't fight with the animated `transform` on the same
+// element. Each spreadX/spreadY points back toward the hero's center
+// — that's where the radial burst-in animation starts from.
 const FLOATING_CARDS: {
   icon: typeof Megaphone;
   caption: string;
@@ -18,10 +29,14 @@ const FLOATING_CARDS: {
   spreadX: string;
   spreadY: string;
 }[] = [
-  { icon: Megaphone, caption: "New summer collection", className: "left-[6%] top-[14%]", rotate: -6, spreadX: "220px", spreadY: "160px" },
-  { icon: Calendar, caption: "7 posts, one click", className: "right-[7%] top-[10%]", rotate: 5, spreadX: "-220px", spreadY: "170px" },
-  { icon: Clapperboard, caption: "8-second video ad", className: "left-[8%] bottom-[16%]", rotate: 4, spreadX: "210px", spreadY: "-160px" },
-  { icon: Palette, caption: "Your brand, every time", className: "right-[6%] bottom-[12%]", rotate: -4, spreadX: "-210px", spreadY: "-150px" },
+  { icon: Megaphone, caption: "New summer collection", className: "left-[4%] top-[8%]", rotate: -4, spreadX: "200px", spreadY: "150px" },
+  { icon: Calendar, caption: "7 posts, one click", className: "left-[calc(50%-80px)] top-[2%]", rotate: 3, spreadX: "0px", spreadY: "180px" },
+  { icon: Clapperboard, caption: "8-second video ad", className: "right-[4%] top-[8%]", rotate: -5, spreadX: "-200px", spreadY: "150px" },
+  { icon: Palette, caption: "Your brand, every time", className: "left-[2%] top-[calc(50%-32px)]", rotate: 4, spreadX: "200px", spreadY: "0px" },
+  { icon: Clock, caption: "Reuse your best posts", className: "right-[2%] top-[calc(50%-32px)]", rotate: -3, spreadX: "-200px", spreadY: "0px" },
+  { icon: Binoculars, caption: "See what competitors do", className: "left-[4%] bottom-[8%]", rotate: 5, spreadX: "200px", spreadY: "-150px" },
+  { icon: Package, caption: "Import your whole catalog", className: "left-[calc(50%-80px)] bottom-[2%]", rotate: -4, spreadX: "0px", spreadY: "-180px" },
+  { icon: Gift, caption: "Earn free credits", className: "right-[4%] bottom-[8%]", rotate: 3, spreadX: "-200px", spreadY: "-150px" },
 ];
 
 // Left-to-right character-decode reveal: characters past the "locked"
@@ -103,7 +118,7 @@ export function LoginScreen() {
               "--spread-x": spreadX,
               "--spread-y": spreadY,
               "--spread-rotate": `${rotate}deg`,
-              animationDelay: `${150 + i * 90}ms`,
+              animationDelay: `${100 + i * 60}ms`,
             } as React.CSSProperties
           }
         >
