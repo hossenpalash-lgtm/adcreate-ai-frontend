@@ -72,6 +72,17 @@ function ScrambleText({ text, className }: { text: string; className?: string })
   return <span className={className}>{display}</span>;
 }
 
+function GoogleIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true">
+      <path fill="#4285F4" d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844a4.14 4.14 0 0 1-1.796 2.716v2.259h2.908c1.702-1.567 2.684-3.874 2.684-6.615z" />
+      <path fill="#34A853" d="M9 18c2.43 0 4.467-.806 5.956-2.18l-2.908-2.259c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 0 0 9 18z" />
+      <path fill="#FBBC05" d="M3.964 10.71A5.41 5.41 0 0 1 3.682 9c0-.593.102-1.17.282-1.71V4.958H.957A8.996 8.996 0 0 0 0 9c0 1.452.348 2.827.957 4.042l3.007-2.332z" />
+      <path fill="#EA4335" d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 0 0 .957 4.958L3.964 7.29C4.672 5.163 6.656 3.58 9 3.58z" />
+    </svg>
+  );
+}
+
 export function LoginScreen() {
   const [mode, setMode] = useState<"signin" | "signup">("signin");
   const [email, setEmail] = useState("");
@@ -79,6 +90,7 @@ export function LoginScreen() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [signupMessage, setSignupMessage] = useState<string | null>(null);
+  const [formVisible, setFormVisible] = useState(false);
   const scrolled = useScrolled();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -137,6 +149,7 @@ export function LoginScreen() {
             type="button"
             onClick={() => {
               setMode((m) => (m === "signin" ? "signup" : "signin"));
+              setFormVisible(true);
               setError(null);
               setSignupMessage(null);
             }}
@@ -186,7 +199,35 @@ export function LoginScreen() {
         </p>
       </div>
 
-      <form onSubmit={handleSubmit} className="relative z-10 w-full max-w-sm">
+      {!formVisible ? (
+        // Default state: two buttons only, matching Arcads' own hero
+        // pattern — no form fields until the user actually commits to
+        // signing in. "Continue with Google" is present but disabled:
+        // real Google sign-in needs a Google Cloud OAuth app + Supabase
+        // provider setup that hasn't been done yet, so this stays
+        // honestly non-functional rather than faking it.
+        <div className="relative z-10 flex flex-col items-center gap-3 sm:flex-row">
+          <button
+            type="button"
+            onClick={() => setFormVisible(true)}
+            className="flex items-center justify-center gap-2 rounded-full px-6 py-3.5 text-base font-semibold text-primary-foreground transition-transform hover:scale-[1.02] active:scale-[0.98]"
+            style={{ background: "var(--gradient-primary)" }}
+          >
+            Create Your AI Ad
+            <Sparkles className="h-4 w-4" />
+          </button>
+          <button
+            type="button"
+            disabled
+            title="Coming soon"
+            className="flex items-center justify-center gap-2 rounded-full border border-border bg-card px-6 py-3.5 text-base font-semibold text-foreground opacity-60 disabled:cursor-not-allowed"
+          >
+            Continue with Google
+            <GoogleIcon />
+          </button>
+        </div>
+      ) : (
+      <form onSubmit={handleSubmit} className="relative z-10 w-full max-w-sm animate-splash-in">
         <div className="mb-4">
           <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-muted-foreground">
             Email
@@ -197,6 +238,7 @@ export function LoginScreen() {
             onChange={(e) => setEmail(e.target.value)}
             required
             autoComplete="email"
+            autoFocus
             className="w-full rounded-xl border border-input bg-background px-4 py-3 text-base text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
           />
         </div>
@@ -236,6 +278,7 @@ export function LoginScreen() {
           )}
         </button>
       </form>
+      )}
 
       <div className="relative z-10 mt-10 w-full">
         <AIToolMarquee />
