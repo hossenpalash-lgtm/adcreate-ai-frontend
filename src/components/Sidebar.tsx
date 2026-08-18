@@ -1,19 +1,5 @@
 import { Binoculars, Calendar, Clock, Gift, LogOut, Megaphone, Package, Palette, Sparkles } from "lucide-react";
-import { useEffect, useState } from "react";
-
-// Drives the glass nav's scroll-aware opacity (see .glass-nav /
-// .glass-nav-scrolled in styles.css) — more see-through at the very
-// top of the page, slightly more opaque once scrolled.
-function useScrolled(threshold = 8) {
-  const [scrolled, setScrolled] = useState(false);
-  useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > threshold);
-    onScroll();
-    window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
-  }, [threshold]);
-  return scrolled;
-}
+import { useScrolled } from "@/lib/use-scrolled";
 
 // "video" has no dedicated nav row (same as "single"/"plan" — all three
 // are only reached via the content-type card grid on the home screen),

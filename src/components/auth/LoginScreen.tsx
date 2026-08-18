@@ -12,6 +12,7 @@ import {
   Sparkles,
 } from "lucide-react";
 import { signInWithPassword, signUpWithPassword } from "@/lib/supabase";
+import { useScrolled } from "@/lib/use-scrolled";
 
 // Desktop-only decorative cards around the login form — illustrative
 // icon+caption chips for real Punqle features (not fake AI-photo
@@ -29,9 +30,9 @@ const FLOATING_CARDS: {
   spreadX: string;
   spreadY: string;
 }[] = [
-  { icon: Megaphone, caption: "New summer collection", className: "left-[4%] top-[8%]", rotate: -4, spreadX: "200px", spreadY: "150px" },
-  { icon: Calendar, caption: "7 posts, one click", className: "left-[calc(50%-80px)] top-[2%]", rotate: 3, spreadX: "0px", spreadY: "180px" },
-  { icon: Clapperboard, caption: "8-second video ad", className: "right-[4%] top-[8%]", rotate: -5, spreadX: "-200px", spreadY: "150px" },
+  { icon: Megaphone, caption: "New summer collection", className: "left-[4%] top-[110px]", rotate: -4, spreadX: "200px", spreadY: "150px" },
+  { icon: Calendar, caption: "7 posts, one click", className: "left-[calc(50%-80px)] top-[104px]", rotate: 3, spreadX: "0px", spreadY: "180px" },
+  { icon: Clapperboard, caption: "8-second video ad", className: "right-[4%] top-[110px]", rotate: -5, spreadX: "-200px", spreadY: "150px" },
   { icon: Palette, caption: "Your brand, every time", className: "left-[2%] top-[calc(50%-32px)]", rotate: 4, spreadX: "200px", spreadY: "0px" },
   { icon: Clock, caption: "Reuse your best posts", className: "right-[2%] top-[calc(50%-32px)]", rotate: -3, spreadX: "-200px", spreadY: "0px" },
   { icon: Binoculars, caption: "See what competitors do", className: "left-[4%] bottom-[8%]", rotate: 5, spreadX: "200px", spreadY: "-150px" },
@@ -77,6 +78,7 @@ export function LoginScreen() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [signupMessage, setSignupMessage] = useState<string | null>(null);
+  const scrolled = useScrolled();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -108,6 +110,43 @@ export function LoginScreen() {
 
   return (
     <main className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden px-6 py-10">
+      {/* Floating frosted-glass top nav — logo left, single CTA right
+          (mirrors Arcads' "Login or Sign up" pattern). Since this page
+          already IS the sign-in/sign-up form, the CTA toggles mode
+          instead of navigating elsewhere — same action as the "New
+          here?" link below, just surfaced as the premium nav pill. */}
+      <header className="fixed inset-x-0 top-0 z-40 flex justify-center px-4 pt-4 sm:px-6">
+        <div
+          className={[
+            "glass-nav flex w-full max-w-[1160px] items-center justify-between rounded-[20px] px-5 py-3",
+            scrolled ? "glass-nav-scrolled" : "",
+          ].join(" ")}
+          style={{ boxShadow: "var(--shadow-card)" }}
+        >
+          <div className="flex items-center gap-2">
+            <div
+              className="flex h-8 w-8 items-center justify-center rounded-lg text-primary-foreground"
+              style={{ background: "var(--gradient-primary)" }}
+            >
+              <Sparkles className="h-4 w-4" />
+            </div>
+            <span className="font-display text-base font-extrabold tracking-tight text-foreground">Punqle</span>
+          </div>
+          <button
+            type="button"
+            onClick={() => {
+              setMode((m) => (m === "signin" ? "signup" : "signin"));
+              setError(null);
+              setSignupMessage(null);
+            }}
+            className="rounded-full px-5 py-2.5 text-sm font-semibold text-primary-foreground transition-transform hover:scale-[1.02] active:scale-[0.98]"
+            style={{ background: "var(--gradient-primary)" }}
+          >
+            {mode === "signin" ? "Sign up" : "Sign in"}
+          </button>
+        </div>
+      </header>
+
       {FLOATING_CARDS.map(({ icon: Icon, caption, className, rotate, spreadX, spreadY }, i) => (
         <div
           key={caption}
