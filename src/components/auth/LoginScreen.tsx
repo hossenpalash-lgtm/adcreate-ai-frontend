@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Calendar, Clapperboard, Loader2, Megaphone, Palette, Sparkles } from "lucide-react";
 import { signInWithPassword, signUpWithPassword } from "@/lib/supabase";
 
@@ -7,17 +7,53 @@ import { signInWithPassword, signUpWithPassword } from "@/lib/supabase";
 // screenshots pretending to be genuine output), giving the page some
 // of the "scattered, alive" energy of Arcads' own hero without
 // claiming a photorealistic result Punqle didn't actually generate.
+// Each card's spreadX/spreadY point back toward the center (opposite
+// of the corner it rests in) — that's where the burst-in animation
+// starts from, per the reference "center to corners" reveal.
 const FLOATING_CARDS: {
   icon: typeof Megaphone;
   caption: string;
   className: string;
   rotate: number;
+  spreadX: string;
+  spreadY: string;
 }[] = [
-  { icon: Megaphone, caption: "New summer collection", className: "left-[6%] top-[14%]", rotate: -6 },
-  { icon: Calendar, caption: "7 posts, one click", className: "right-[7%] top-[10%]", rotate: 5 },
-  { icon: Clapperboard, caption: "8-second video ad", className: "left-[8%] bottom-[16%]", rotate: 4 },
-  { icon: Palette, caption: "Your brand, every time", className: "right-[6%] bottom-[12%]", rotate: -4 },
+  { icon: Megaphone, caption: "New summer collection", className: "left-[6%] top-[14%]", rotate: -6, spreadX: "220px", spreadY: "160px" },
+  { icon: Calendar, caption: "7 posts, one click", className: "right-[7%] top-[10%]", rotate: 5, spreadX: "-220px", spreadY: "170px" },
+  { icon: Clapperboard, caption: "8-second video ad", className: "left-[8%] bottom-[16%]", rotate: 4, spreadX: "210px", spreadY: "-160px" },
+  { icon: Palette, caption: "Your brand, every time", className: "right-[6%] bottom-[12%]", rotate: -4, spreadX: "-210px", spreadY: "-150px" },
 ];
+
+// Left-to-right character-decode reveal: characters past the "locked"
+// boundary cycle through random letters, boundary advances each tick,
+// settling on the real text — the scramble/glitch headline reveal.
+function ScrambleText({ text, className }: { text: string; className?: string }) {
+  const [display, setDisplay] = useState(text);
+  const ranRef = useRef(false);
+  useEffect(() => {
+    if (ranRef.current) return;
+    ranRef.current = true;
+    const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
+    const steps = 16;
+    let step = 0;
+    const id = setInterval(() => {
+      step++;
+      const lockedCount = Math.ceil((step / steps) * text.length);
+      setDisplay(
+        text
+          .split("")
+          .map((ch, i) => (i < lockedCount || ch === " " ? ch : chars[Math.floor(Math.random() * chars.length)]))
+          .join(""),
+      );
+      if (step >= steps) {
+        setDisplay(text);
+        clearInterval(id);
+      }
+    }, 35);
+    return () => clearInterval(id);
+  }, [text]);
+  return <span className={className}>{display}</span>;
+}
 
 export function LoginScreen() {
   const [mode, setMode] = useState<"signin" | "signup">("signin");
@@ -57,11 +93,19 @@ export function LoginScreen() {
 
   return (
     <main className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden px-6 py-10">
-      {FLOATING_CARDS.map(({ icon: Icon, caption, className, rotate }) => (
+      {FLOATING_CARDS.map(({ icon: Icon, caption, className, rotate, spreadX, spreadY }, i) => (
         <div
           key={caption}
-          className={`absolute z-0 hidden w-40 items-center gap-2 rounded-2xl bg-card p-3 lg:flex ${className}`}
-          style={{ boxShadow: "var(--shadow-card)", transform: `rotate(${rotate}deg)` }}
+          className={`animate-card-spread absolute z-0 hidden w-40 items-center gap-2 rounded-2xl bg-card p-3 lg:flex ${className}`}
+          style={
+            {
+              boxShadow: "var(--shadow-card)",
+              "--spread-x": spreadX,
+              "--spread-y": spreadY,
+              "--spread-rotate": `${rotate}deg`,
+              animationDelay: `${150 + i * 90}ms`,
+            } as React.CSSProperties
+          }
         >
           <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-secondary text-secondary-foreground">
             <Icon className="h-4 w-4" />
@@ -78,7 +122,9 @@ export function LoginScreen() {
         <div className="flex h-14 w-14 items-center justify-center rounded-2xl text-primary-foreground" style={{ background: "var(--gradient-primary)" }}>
           <Sparkles className="h-7 w-7" />
         </div>
-        <h1 className="font-display text-2xl font-extrabold text-foreground">Punqle</h1>
+        <h1 className="font-display text-2xl font-extrabold text-foreground" aria-label="Punqle">
+          <ScrambleText text="Punqle" />
+        </h1>
         <p className="text-sm text-muted-foreground">
           AI-generated ads <span className="font-display italic">and content plans</span> for small businesses
         </p>

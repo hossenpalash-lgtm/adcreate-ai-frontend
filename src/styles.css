@@ -148,3 +148,21 @@
 .animate-splash-in {
   animation: splash-in 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
+
+/* Login screen floating cards (LoginScreen.tsx) — each card starts near
+   the center (offset back toward it via --spread-x/--spread-y, set per
+   card inline) and spreads outward to its resting position, each in
+   its own direction, matching the reference "burst from center" reveal. */
+@keyframes card-spread-in {
+  from {
+    opacity: 0;
+    transform: translate(var(--spread-x), var(--spread-y)) scale(0.5) rotate(var(--spread-rotate));
+  }
+  to {
+    opacity: 1;
+    transform: translate(0, 0) scale(1) rotate(var(--spread-rotate));
+  }
+}
+.animate-card-spread {
+  animation: card-spread-in 0.9s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
