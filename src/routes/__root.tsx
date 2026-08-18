@@ -189,7 +189,11 @@ function RootComponent() {
             <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
           </main>
         ) : session === null ? (
-          <div className="mx-auto flex min-h-screen w-full max-w-md flex-col">
+          // No max-w constraint here (unlike the signed-in app shell below) —
+          // LoginScreen's own <form> already caps itself at max-w-sm, but the
+          // outer container needs the full viewport width so its desktop-only
+          // floating decorative cards have room to spread out around it.
+          <div className="flex min-h-screen w-full flex-col">
             <LoginScreen />
           </div>
         ) : (
