@@ -9,7 +9,7 @@ import {
   Scripts,
 } from "@tanstack/react-router";
 import { useEffect, useState, type ReactNode } from "react";
-import { Loader2 } from "lucide-react";
+import { Sparkles } from "lucide-react";
 
 import appCss from "../styles.css?url";
 import { supabase, signOut, type Session } from "../lib/supabase";
@@ -124,6 +124,10 @@ function RootComponent() {
   const { queryClient } = Route.useRouteContext();
   // undefined = still checking for an existing session, null = signed out
   const [session, setSession] = useState<Session | null | undefined>(undefined);
+  // The auth check usually resolves almost instantly (localStorage, not a
+  // network call), which would make the splash below flash by unseen —
+  // holding it for a fixed minimum makes the brand reveal actually land.
+  const [minSplashDone, setMinSplashDone] = useState(false);
   const [brandKitOpen, setBrandKitOpen] = useState(false);
   const [productCatalogOpen, setProductCatalogOpen] = useState(false);
   const [referralOpen, setReferralOpen] = useState(false);
@@ -150,6 +154,11 @@ function RootComponent() {
       setSession(newSession);
     });
     return () => listener.subscription.unsubscribe();
+  }, []);
+
+  useEffect(() => {
+    const t = setTimeout(() => setMinSplashDone(true), 700);
+    return () => clearTimeout(t);
   }, []);
 
   // Stashed on first load (works whether the link was opened before or
@@ -184,9 +193,28 @@ function RootComponent() {
   return (
     <QueryClientProvider client={queryClient}>
       <div className="flex min-h-screen w-full flex-col bg-background lg:flex-row">
-        {session === undefined ? (
-          <main className="flex min-h-screen w-full items-center justify-center">
-            <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+        {session === undefined || !minSplashDone ? (
+          // Branded splash on app open — dark radial glow + logo reveal,
+          // matching the reference "title card" transition energy but
+          // with Punqle's own mark, not a literal copy of anyone else's
+          // text. Held for a fixed minimum (see the timer above) since
+          // the real auth check usually resolves too fast to be seen.
+          <main
+            className="flex min-h-screen w-full items-center justify-center overflow-hidden"
+            style={{
+              background:
+                "radial-gradient(circle at 50% 45%, oklch(0.24 0.02 260) 0%, oklch(0.07 0.008 260) 72%)",
+            }}
+          >
+            <div className="flex animate-splash-in flex-col items-center gap-4">
+              <div
+                className="flex h-20 w-20 items-center justify-center rounded-3xl bg-white/10 text-white"
+                style={{ boxShadow: "0 0 70px 14px rgba(255,255,255,0.16)" }}
+              >
+                <Sparkles className="h-10 w-10" />
+              </div>
+              <h1 className="font-display text-3xl font-extrabold tracking-wide text-white">Punqle</h1>
+            </div>
           </main>
         ) : session === null ? (
           // No max-w constraint here (unlike the signed-in app shell below) —
