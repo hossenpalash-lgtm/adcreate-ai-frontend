@@ -14,15 +14,17 @@ import {
 import { signInWithPassword, signUpWithPassword } from "@/lib/supabase";
 import { useScrolled } from "@/lib/use-scrolled";
 
-// Desktop-only decorative cards around the login form — illustrative
-// icon+caption chips for real Punqle features (not fake AI-photo
-// screenshots pretending to be genuine output), framing the headline
-// as a floating collage. Positions use calc() (not translate-x-1/2)
-// for the center-column/middle-row cards specifically so the static
-// placement doesn't fight with the animated `transform` on the same
-// element. Each spreadX/spreadY points back toward the hero's center
-// — that's where the radial burst-in animation starts from.
+// Desktop-only floating photo cards around the login form — real
+// product-ad images generated once through Punqle's own /ads/generate
+// endpoint (genuine output, not stock photos or fake AI-photo
+// screenshots), each with a short feature caption overlaid at the
+// bottom like a real social post. Positions use calc() (not
+// translate-x-1/2) for the center-column/middle-row cards specifically
+// so the static placement doesn't fight with the animated `transform`
+// on the same element. Each spreadX/spreadY points back toward the
+// hero's center — that's where the radial burst-in animation starts.
 const FLOATING_CARDS: {
+  image: string;
   icon: typeof Megaphone;
   caption: string;
   className: string;
@@ -30,14 +32,14 @@ const FLOATING_CARDS: {
   spreadX: string;
   spreadY: string;
 }[] = [
-  { icon: Megaphone, caption: "New summer collection", className: "left-[4%] top-[110px]", rotate: -4, spreadX: "200px", spreadY: "150px" },
-  { icon: Calendar, caption: "7 posts, one click", className: "left-[calc(50%-80px)] top-[104px]", rotate: 3, spreadX: "0px", spreadY: "180px" },
-  { icon: Clapperboard, caption: "8-second video ad", className: "right-[4%] top-[110px]", rotate: -5, spreadX: "-200px", spreadY: "150px" },
-  { icon: Palette, caption: "Your brand, every time", className: "left-[2%] top-[calc(50%-32px)]", rotate: 4, spreadX: "200px", spreadY: "0px" },
-  { icon: Clock, caption: "Reuse your best posts", className: "right-[2%] top-[calc(50%-32px)]", rotate: -3, spreadX: "-200px", spreadY: "0px" },
-  { icon: Binoculars, caption: "See what competitors do", className: "left-[4%] bottom-[8%]", rotate: 5, spreadX: "200px", spreadY: "-150px" },
-  { icon: Package, caption: "Import your whole catalog", className: "left-[calc(50%-80px)] bottom-[2%]", rotate: -4, spreadX: "0px", spreadY: "-180px" },
-  { icon: Gift, caption: "Earn free credits", className: "right-[4%] bottom-[8%]", rotate: 3, spreadX: "-200px", spreadY: "-150px" },
+  { image: "/hero-cards/bakery.jpg", icon: Megaphone, caption: "New summer collection", className: "left-[4%] top-[110px]", rotate: -4, spreadX: "200px", spreadY: "150px" },
+  { image: "/hero-cards/knit-sweater.jpg", icon: Calendar, caption: "7 posts, one click", className: "left-[calc(50%-72px)] top-[104px]", rotate: 3, spreadX: "0px", spreadY: "180px" },
+  { image: "/hero-cards/florist.jpg", icon: Clapperboard, caption: "8-second video ad", className: "right-[4%] top-[110px]", rotate: -5, spreadX: "-200px", spreadY: "150px" },
+  { image: "/hero-cards/ceramic-mug.jpg", icon: Palette, caption: "Your brand, every time", className: "left-[2%] top-[calc(50%-70px)]", rotate: 4, spreadX: "200px", spreadY: "0px" },
+  { image: "/hero-cards/skincare.jpg", icon: Clock, caption: "Reuse your best posts", className: "right-[2%] top-[calc(50%-70px)]", rotate: -3, spreadX: "-200px", spreadY: "0px" },
+  { image: "/hero-cards/chocolate.jpg", icon: Binoculars, caption: "See what competitors do", className: "left-[4%] bottom-[8%]", rotate: 5, spreadX: "200px", spreadY: "-150px" },
+  { image: "/hero-cards/yoga.jpg", icon: Package, caption: "Import your whole catalog", className: "left-[calc(50%-72px)] bottom-[2%]", rotate: -4, spreadX: "0px", spreadY: "-180px" },
+  { image: "/hero-cards/leather-wallet.jpg", icon: Gift, caption: "Earn free credits", className: "right-[4%] bottom-[8%]", rotate: 3, spreadX: "-200px", spreadY: "-150px" },
 ];
 
 // Left-to-right character-decode reveal: characters past the "locked"
@@ -147,10 +149,10 @@ export function LoginScreen() {
         </div>
       </header>
 
-      {FLOATING_CARDS.map(({ icon: Icon, caption, className, rotate, spreadX, spreadY }, i) => (
+      {FLOATING_CARDS.map(({ image, icon: Icon, caption, className, rotate, spreadX, spreadY }, i) => (
         <div
           key={caption}
-          className={`animate-card-spread absolute z-0 hidden w-40 items-center gap-2 rounded-2xl bg-card p-3 lg:flex ${className}`}
+          className={`animate-card-spread absolute z-0 hidden w-36 overflow-hidden rounded-2xl lg:block ${className}`}
           style={
             {
               boxShadow: "var(--shadow-card)",
@@ -161,10 +163,11 @@ export function LoginScreen() {
             } as React.CSSProperties
           }
         >
-          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-secondary text-secondary-foreground">
-            <Icon className="h-4 w-4" />
+          <img src={image} alt="" className="h-56 w-full object-cover" loading="lazy" />
+          <div className="absolute inset-x-0 bottom-0 flex items-center gap-1.5 bg-gradient-to-t from-black/70 to-transparent px-2.5 pb-2 pt-6">
+            <Icon className="h-3 w-3 shrink-0 text-white" />
+            <span className="text-[11px] font-semibold leading-tight text-white">{caption}</span>
           </div>
-          <span className="text-xs font-semibold text-foreground">{caption}</span>
         </div>
       ))}
 
