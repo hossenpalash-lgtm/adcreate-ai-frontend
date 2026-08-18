@@ -187,8 +187,14 @@
    text over busy content stays readable. */
 .glass-nav {
   background: rgba(255, 255, 255, 0.55);
-  backdrop-filter: blur(20px) saturate(180%);
-  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  /* !important: Tailwind's own preflight/utilities layer sets a
+     var-driven `backdrop-filter` reset on elements that lands after
+     this un-layered rule in the compiled cascade, silently zeroing
+     the blur out — confirmed via computed style on production before
+     this fix (backdrop-filter computed to "none" despite this rule
+     being present in the shipped CSS). */
+  backdrop-filter: blur(20px) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(20px) saturate(180%) !important;
   transition: background-color 0.3s ease;
 }
 .glass-nav-scrolled {
