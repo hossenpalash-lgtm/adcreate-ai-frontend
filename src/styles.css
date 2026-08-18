@@ -47,28 +47,33 @@
 }
 
 :root {
-  /* Punqle palette: clean white/off-white surfaces, an indigo-blue
-     primary accent (distinct from Baki.AI's coral, since this is a
-     separate brand), and its own genuine destructive red — unlike
-     Baki.AI's deliberate single-accent choice, this app has ordinary
-     success/error semantics since it isn't built around one urgent
-     recording-state action. */
+  /* Punqle palette v2 (2026-08-18, Arcads-inspired premium pass):
+     switched the primary accent from an indigo-blue gradient to a
+     near-black "ink" — Arcads' own real site (verified from live
+     screenshots, not assumed) is white/black/gray with black CTAs,
+     not the dark-neon look an earlier brief mistakenly described.
+     Kept `--primary`/`--primary-glow`/`--gradient-primary` as the
+     same variable names so every existing component that already
+     references them (buttons, badges, the logo mark) picks up the
+     new look automatically with zero component-level changes —
+     just a subtle charcoal-to-black diagonal sheen instead of flat
+     black, so buttons keep a touch of premium depth. */
   --radius: 0.85rem;
   --background: oklch(0.99 0.002 260);
-  --foreground: oklch(0.22 0.01 260);
+  --foreground: oklch(0.2 0.005 260);
   --card: oklch(1 0 0);
-  --card-foreground: oklch(0.22 0.01 260);
+  --card-foreground: oklch(0.2 0.005 260);
   --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.22 0.01 260);
-  --primary: oklch(0.55 0.18 260);
+  --popover-foreground: oklch(0.2 0.005 260);
+  --primary: oklch(0.16 0.005 260);
   --primary-foreground: oklch(1 0 0);
-  --primary-glow: oklch(0.6 0.16 255);
-  --secondary: oklch(0.96 0.005 260);
-  --secondary-foreground: oklch(0.28 0.01 260);
-  --muted: oklch(0.96 0.005 260);
-  --muted-foreground: oklch(0.53 0.01 260);
-  --accent: oklch(0.93 0.03 255);
-  --accent-foreground: oklch(0.32 0.08 260);
+  --primary-glow: oklch(0.29 0.008 260);
+  --secondary: oklch(0.96 0.003 260);
+  --secondary-foreground: oklch(0.24 0.005 260);
+  --muted: oklch(0.96 0.003 260);
+  --muted-foreground: oklch(0.53 0.006 260);
+  --accent: oklch(0.94 0.004 260);
+  --accent-foreground: oklch(0.2 0.005 260);
   --destructive: oklch(0.58 0.22 25);
   --destructive-foreground: oklch(1 0 0);
   --destructive-glow: oklch(0.62 0.2 25);
@@ -77,9 +82,9 @@
   --success-foreground: oklch(1 0 0);
   --warning: oklch(0.75 0.16 75);
   --warning-foreground: oklch(0.22 0.05 75);
-  --border: oklch(0.91 0.005 260);
-  --input: oklch(0.91 0.005 260);
-  --ring: oklch(0.55 0.18 260);
+  --border: oklch(0.91 0.003 260);
+  --input: oklch(0.91 0.003 260);
+  --ring: oklch(0.16 0.005 260);
 }
 
 .dark {
