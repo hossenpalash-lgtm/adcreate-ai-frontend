@@ -37,7 +37,13 @@ export function Sidebar({
 }) {
   return (
     <>
-      <aside className="hidden shrink-0 border-r border-border bg-card px-4 py-6 lg:flex lg:h-screen lg:w-60 lg:flex-col">
+      {/* Floating rounded rail (matches the mobile pill nav bar's soft
+          elevation treatment) instead of a flush edge-to-edge panel with
+          a hard right border — inset with margin on all sides. */}
+      <aside
+        className="hidden shrink-0 rounded-2xl bg-card px-4 py-6 lg:my-4 lg:ml-4 lg:flex lg:h-[calc(100vh-2rem)] lg:w-60 lg:flex-col"
+        style={{ boxShadow: "var(--shadow-card)" }}
+      >
         <div className="mb-8 flex items-center gap-2 px-2">
           <div
             className="flex h-8 w-8 items-center justify-center rounded-lg text-primary-foreground"
