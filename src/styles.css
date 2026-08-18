@@ -201,6 +201,27 @@
   background: rgba(255, 255, 255, 0.78);
 }
 
+/* WorkflowShowcase.tsx's two cards — subtle fade + rise, staggered via
+   each card's own inline animation-delay. */
+@keyframes fade-rise {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.animate-fade-rise {
+  animation: fade-rise 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+@media (prefers-reduced-motion: reduce) {
+  .animate-fade-rise {
+    animation: none;
+  }
+}
+
 /* Infinite tool-pill marquee (ToolMarquee.tsx). The track holds the
    pill set twice back-to-back; translating by exactly -50% (one set's
    width) makes the loop restart land on pixel-identical content, so

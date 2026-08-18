@@ -14,6 +14,7 @@ import {
 import { signInWithPassword, signUpWithPassword } from "@/lib/supabase";
 import { useScrolled } from "@/lib/use-scrolled";
 import { AIToolMarquee } from "@/components/ToolMarquee";
+import { WorkflowShowcase } from "@/components/auth/WorkflowShowcase";
 
 // Desktop-only floating photo cards around the login form — real
 // product-ad images generated once through Punqle's own /ads/generate
@@ -280,7 +281,9 @@ export function LoginScreen() {
       </form>
       )}
 
-      <div className="relative z-10 mt-10 w-full">
+      <WorkflowShowcase />
+
+      <div className="relative z-10 mt-14 w-full">
         <AIToolMarquee />
       </div>
 
