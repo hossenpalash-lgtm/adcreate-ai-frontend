@@ -34,12 +34,10 @@ const FLOATING_CARDS: {
   spreadY: string;
 }[] = [
   { image: "/hero-cards/bakery.jpg", icon: Megaphone, caption: "New summer collection", className: "left-[4%] top-[110px]", rotate: -4, spreadX: "200px", spreadY: "150px" },
-  { image: "/hero-cards/knit-sweater.jpg", icon: Calendar, caption: "7 posts, one click", className: "left-[calc(50%-72px)] top-[104px]", rotate: 3, spreadX: "0px", spreadY: "180px" },
   { image: "/hero-cards/florist.jpg", icon: Clapperboard, caption: "8-second video ad", className: "right-[4%] top-[110px]", rotate: -5, spreadX: "-200px", spreadY: "150px" },
   { image: "/hero-cards/ceramic-mug.jpg", icon: Palette, caption: "Your brand, every time", className: "left-[2%] top-[calc(50%-70px)]", rotate: 4, spreadX: "200px", spreadY: "0px" },
   { image: "/hero-cards/skincare.jpg", icon: Clock, caption: "Reuse your best posts", className: "right-[2%] top-[calc(50%-70px)]", rotate: -3, spreadX: "-200px", spreadY: "0px" },
   { image: "/hero-cards/chocolate.jpg", icon: Binoculars, caption: "See what competitors do", className: "left-[4%] bottom-[8%]", rotate: 5, spreadX: "200px", spreadY: "-150px" },
-  { image: "/hero-cards/yoga.jpg", icon: Package, caption: "Import your whole catalog", className: "left-[calc(50%-72px)] bottom-[2%]", rotate: -4, spreadX: "0px", spreadY: "-180px" },
   { image: "/hero-cards/leather-wallet.jpg", icon: Gift, caption: "Earn free credits", className: "right-[4%] bottom-[8%]", rotate: 3, spreadX: "-200px", spreadY: "-150px" },
 ];
 
@@ -236,18 +234,6 @@ export function LoginScreen() {
           ) : (
             "Create account"
           )}
-        </button>
-
-        <button
-          type="button"
-          onClick={() => {
-            setMode((m) => (m === "signin" ? "signup" : "signin"));
-            setError(null);
-            setSignupMessage(null);
-          }}
-          className="mt-4 w-full text-center text-sm font-semibold text-primary underline-offset-2 hover:underline"
-        >
-          {mode === "signin" ? "New here? Create an account" : "Already have an account? Sign in"}
         </button>
       </form>
 
