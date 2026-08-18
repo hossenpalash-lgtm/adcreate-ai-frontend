@@ -92,65 +92,73 @@ export function Sidebar({
         </button>
       </aside>
 
-      <header className="flex items-center justify-between border-b border-border px-6 py-4 lg:hidden">
-        <div className="flex items-center gap-2">
-          <div
-            className="flex h-8 w-8 items-center justify-center rounded-lg text-primary-foreground"
-            style={{ background: "var(--gradient-primary)" }}
-          >
-            <Sparkles className="h-4 w-4" />
+      {/* Floating pill nav bar (Arcads-style), inset from the edges with
+          its own elevation shadow instead of a flush edge-to-edge bar
+          with a bottom border — stays pinned while scrolling. */}
+      <header className="sticky top-0 z-40 bg-background px-3 pt-3 pb-2 lg:hidden">
+        <div
+          className="flex items-center justify-between gap-2 overflow-x-auto rounded-full bg-card py-2 pl-3 pr-2"
+          style={{ boxShadow: "var(--shadow-card)" }}
+        >
+          <div className="flex shrink-0 items-center gap-2">
+            <div
+              className="flex h-8 w-8 items-center justify-center rounded-full text-primary-foreground"
+              style={{ background: "var(--gradient-primary)" }}
+            >
+              <Sparkles className="h-4 w-4" />
+            </div>
+            <span className="font-display text-sm font-extrabold text-foreground">Punqle</span>
           </div>
-          <span className="font-display text-sm font-extrabold text-foreground">Punqle</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => onNavigate("history")}
-            aria-label="History"
-            className={[
-              "flex h-9 w-9 items-center justify-center rounded-full",
-              tab === "history" ? "bg-primary text-primary-foreground" : "bg-secondary text-secondary-foreground",
-            ].join(" ")}
-          >
-            <Clock className="h-4 w-4" />
-          </button>
-          <button
-            onClick={() => onNavigate("competitor")}
-            aria-label="Competitor Analysis"
-            className={[
-              "flex h-9 w-9 items-center justify-center rounded-full",
-              tab === "competitor" ? "bg-primary text-primary-foreground" : "bg-secondary text-secondary-foreground",
-            ].join(" ")}
-          >
-            <Binoculars className="h-4 w-4" />
-          </button>
-          <button
-            onClick={onOpenBrandKit}
-            aria-label="Brand Kit"
-            className="flex h-9 w-9 items-center justify-center rounded-full bg-secondary text-secondary-foreground"
-          >
-            <Palette className="h-4 w-4" />
-          </button>
-          <button
-            onClick={onOpenProductCatalog}
-            aria-label="Product Catalog"
-            className="flex h-9 w-9 items-center justify-center rounded-full bg-secondary text-secondary-foreground"
-          >
-            <Package className="h-4 w-4" />
-          </button>
-          <button
-            onClick={onOpenReferral}
-            aria-label="Invite & Earn"
-            className="flex h-9 w-9 items-center justify-center rounded-full bg-secondary text-secondary-foreground"
-          >
-            <Gift className="h-4 w-4" />
-          </button>
-          <button
-            onClick={onSignOut}
-            aria-label="Sign out"
-            className="flex h-9 w-9 items-center justify-center rounded-full bg-secondary text-secondary-foreground"
-          >
-            <LogOut className="h-4 w-4" />
-          </button>
+          <div className="flex shrink-0 items-center gap-1">
+            <button
+              onClick={() => onNavigate("history")}
+              aria-label="History"
+              className={[
+                "flex h-9 w-9 items-center justify-center rounded-full",
+                tab === "history" ? "bg-primary text-primary-foreground" : "text-secondary-foreground hover:bg-secondary",
+              ].join(" ")}
+            >
+              <Clock className="h-4 w-4" />
+            </button>
+            <button
+              onClick={() => onNavigate("competitor")}
+              aria-label="Competitor Analysis"
+              className={[
+                "flex h-9 w-9 items-center justify-center rounded-full",
+                tab === "competitor" ? "bg-primary text-primary-foreground" : "text-secondary-foreground hover:bg-secondary",
+              ].join(" ")}
+            >
+              <Binoculars className="h-4 w-4" />
+            </button>
+            <button
+              onClick={onOpenBrandKit}
+              aria-label="Brand Kit"
+              className="flex h-9 w-9 items-center justify-center rounded-full text-secondary-foreground hover:bg-secondary"
+            >
+              <Palette className="h-4 w-4" />
+            </button>
+            <button
+              onClick={onOpenProductCatalog}
+              aria-label="Product Catalog"
+              className="flex h-9 w-9 items-center justify-center rounded-full text-secondary-foreground hover:bg-secondary"
+            >
+              <Package className="h-4 w-4" />
+            </button>
+            <button
+              onClick={onOpenReferral}
+              aria-label="Invite & Earn"
+              className="flex h-9 w-9 items-center justify-center rounded-full text-secondary-foreground hover:bg-secondary"
+            >
+              <Gift className="h-4 w-4" />
+            </button>
+            <button
+              onClick={onSignOut}
+              aria-label="Sign out"
+              className="flex h-9 w-9 items-center justify-center rounded-full text-secondary-foreground hover:bg-secondary"
+            >
+              <LogOut className="h-4 w-4" />
+            </button>
+          </div>
         </div>
       </header>
     </>
