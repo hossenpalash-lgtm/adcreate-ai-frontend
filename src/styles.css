@@ -178,3 +178,19 @@
     transform: rotate(var(--spread-rotate));
   }
 }
+
+/* Frosted-glass nav surface (Sidebar.tsx's mobile pill header + desktop
+   rail) — translucent white + backdrop blur instead of a flat solid
+   --card fill, so page content stays faintly visible through it. Two
+   opacity states toggled by scroll position (see Sidebar.tsx): more
+   see-through at the very top, slightly more opaque once scrolled so
+   text over busy content stays readable. */
+.glass-nav {
+  background: rgba(255, 255, 255, 0.55);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  transition: background-color 0.3s ease;
+}
+.glass-nav-scrolled {
+  background: rgba(255, 255, 255, 0.78);
+}

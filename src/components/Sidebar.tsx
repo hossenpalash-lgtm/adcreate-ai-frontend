@@ -1,4 +1,19 @@
 import { Binoculars, Calendar, Clock, Gift, LogOut, Megaphone, Package, Palette, Sparkles } from "lucide-react";
+import { useEffect, useState } from "react";
+
+// Drives the glass nav's scroll-aware opacity (see .glass-nav /
+// .glass-nav-scrolled in styles.css) — more see-through at the very
+// top of the page, slightly more opaque once scrolled.
+function useScrolled(threshold = 8) {
+  const [scrolled, setScrolled] = useState(false);
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > threshold);
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, [threshold]);
+  return scrolled;
+}
 
 // "video" has no dedicated nav row (same as "single"/"plan" — all three
 // are only reached via the content-type card grid on the home screen),
@@ -35,13 +50,17 @@ export function Sidebar({
   onOpenReferral: () => void;
   onSignOut: () => void;
 }) {
+  const scrolled = useScrolled();
   return (
     <>
-      {/* Floating rounded rail (matches the mobile pill nav bar's soft
-          elevation treatment) instead of a flush edge-to-edge panel with
-          a hard right border — inset with margin on all sides. */}
+      {/* Floating frosted-glass rail — translucent + backdrop-blur
+          instead of a flat --card fill, sticky so it stays in view
+          instead of scrolling away with the page content. */}
       <aside
-        className="hidden shrink-0 rounded-2xl bg-card px-4 py-6 lg:my-4 lg:ml-4 lg:flex lg:h-[calc(100vh-2rem)] lg:w-60 lg:flex-col"
+        className={[
+          "glass-nav hidden shrink-0 rounded-2xl px-4 py-6 lg:sticky lg:top-4 lg:my-4 lg:ml-4 lg:flex lg:h-[calc(100vh-2rem)] lg:w-60 lg:flex-col",
+          scrolled ? "glass-nav-scrolled" : "",
+        ].join(" ")}
         style={{ boxShadow: "var(--shadow-card)" }}
       >
         <div className="mb-8 flex items-center gap-2 px-2">
@@ -98,12 +117,16 @@ export function Sidebar({
         </button>
       </aside>
 
-      {/* Floating pill nav bar (Arcads-style), inset from the edges with
-          its own elevation shadow instead of a flush edge-to-edge bar
-          with a bottom border — stays pinned while scrolling. */}
-      <header className="sticky top-0 z-40 bg-background px-3 pt-3 pb-2 lg:hidden">
+      {/* Floating frosted-glass pill nav bar (Arcads-style), inset from
+          the edges — the outer header itself stays transparent so page
+          content is visible in the margin around the pill, and only
+          the pill surface gets the translucent blur treatment. */}
+      <header className="sticky top-0 z-40 px-3 pt-3 pb-2 lg:hidden">
         <div
-          className="flex items-center justify-between gap-2 overflow-x-auto rounded-full bg-card py-2 pl-3 pr-2"
+          className={[
+            "glass-nav flex items-center justify-between gap-2 overflow-x-auto rounded-full py-2 pl-3 pr-2",
+            scrolled ? "glass-nav-scrolled" : "",
+          ].join(" ")}
           style={{ boxShadow: "var(--shadow-card)" }}
         >
           <div className="flex shrink-0 items-center gap-2">
