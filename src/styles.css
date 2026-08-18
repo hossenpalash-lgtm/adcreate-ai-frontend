@@ -193,8 +193,8 @@
      the blur out — confirmed via computed style on production before
      this fix (backdrop-filter computed to "none" despite this rule
      being present in the shipped CSS). */
-  backdrop-filter: blur(20px) saturate(180%) !important;
   -webkit-backdrop-filter: blur(20px) saturate(180%) !important;
+  backdrop-filter: blur(20px) saturate(180%) !important;
   transition: background-color 0.3s ease;
 }
 .glass-nav-scrolled {
