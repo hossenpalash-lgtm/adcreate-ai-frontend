@@ -7,9 +7,9 @@
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) + 4px);
-  --radius-2xl: calc(var(--radius) + 8px);
-  --radius-3xl: calc(var(--radius) + 12px);
+  --radius-xl: calc(var(--radius) + 6px);
+  --radius-2xl: calc(var(--radius) + 12px);
+  --radius-3xl: calc(var(--radius) + 18px);
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
@@ -39,11 +39,15 @@
   --gradient-primary: linear-gradient(135deg, var(--primary), var(--primary-glow));
   --gradient-destructive: linear-gradient(135deg, var(--destructive), var(--destructive-glow));
   --gradient-success: linear-gradient(135deg, var(--success), var(--success-glow));
-  /* A hairline border expressed as a box-shadow (not an elevation shadow) —
-     every existing `style={{ boxShadow: "var(--shadow-card)" }}` card becomes
-     a flat white card with a 1px border instead of a soft drop shadow, with
-     no component changes needed. Matches Baki Khata's flat Airbnb-style look. */
-  --shadow-card: 0 0 0 1px var(--border);
+  /* 2026-08-18: replaced the flat hairline-border look with a soft,
+     layered elevation shadow — a faint 1px edge for crispness plus two
+     diffuse shadow layers for a "floating card" feel, closer to Arcads'
+     softer/iOS-native card treatment than Baki Khata's flat style this
+     was originally matched to. Every existing
+     `style={{ boxShadow: "var(--shadow-card)" }}` card picks this up
+     automatically, no component changes needed. */
+  --shadow-card: 0 0 0 1px oklch(0.9 0.003 260 / 55%), 0 1px 2px oklch(0.2 0.01 260 / 4%),
+    0 12px 28px -8px oklch(0.2 0.01 260 / 10%);
 }
 
 :root {
