@@ -281,13 +281,13 @@ export function LoginScreen() {
       </form>
       )}
 
-      <WorkflowShowcase />
-
       <div className="relative z-10 mt-14 w-full">
         <AIToolMarquee />
       </div>
 
-      <p className="relative z-10 mt-6 text-center text-xs text-muted-foreground">
+      <WorkflowShowcase />
+
+      <p className="relative z-10 mt-10 text-center text-xs text-muted-foreground">
         Punqle is operated by HOSSEN, MD MOSHARRAF &middot; ABN 47 183 516 336
       </p>
     </main>
