@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { Calendar, Megaphone, Sparkles, Video } from "lucide-react";
+import { Megaphone, Sparkles, Video } from "lucide-react";
 import { useEffect, useState } from "react";
 import { fetchAdCredits } from "@/lib/api";
 import { CompetitorAnalysis } from "@/components/ads/CompetitorAnalysis";
@@ -26,6 +26,10 @@ export const Route = createFileRoute("/")({
   }),
 });
 
+// Single Post and Video are the primary "Create" entry point — Weekly Plan
+// and Competitor Analysis are demoted to the sidebar's "More tools" section
+// (see Sidebar.tsx) rather than shown here, per the decision to keep the
+// core flow focused on ad creation rather than broader content planning.
 const CONTENT_TYPES: {
   tab: Tab;
   label: string;
@@ -33,7 +37,6 @@ const CONTENT_TYPES: {
   icon: typeof Megaphone;
 }[] = [
   { tab: "single", label: "Single Post", description: "One ad, ready in seconds", icon: Megaphone },
-  { tab: "plan", label: "Weekly Plan", description: "A week of posts at once", icon: Calendar },
   { tab: "video", label: "Video", description: "A short video ad (10 credits)", icon: Video },
 ];
 
@@ -67,12 +70,12 @@ function HomeScreen() {
       </div>
       {creditsError && <p className="mb-4 text-sm text-destructive">{creditsError}</p>}
 
-      {(tab === "single" || tab === "plan" || tab === "video") && (
+      {(tab === "single" || tab === "video") && (
         <>
           <h1 className="font-display mb-3 text-lg font-extrabold text-foreground">
             Create Your Next Post
           </h1>
-          <div className="mb-6 grid grid-cols-3 gap-2 lg:grid-cols-3">
+          <div className="mb-6 grid grid-cols-2 gap-2">
             {CONTENT_TYPES.map(({ tab: t, label, description, icon: Icon }, i) => (
               <button
                 key={i}

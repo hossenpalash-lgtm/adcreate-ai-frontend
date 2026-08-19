@@ -1,15 +1,23 @@
-import { Binoculars, Calendar, Clock, CreditCard, Gift, LogOut, Megaphone, Package, Palette, Sparkles } from "lucide-react";
+import { Binoculars, Calendar, Clock, CreditCard, Gift, LogOut, Megaphone, Package, Palette, Sparkles, Video } from "lucide-react";
 import { useScrolled } from "@/lib/use-scrolled";
 
-// "video" has no dedicated nav row (same as "single"/"plan" — all three
-// are only reached via the content-type card grid on the home screen),
-// but still needs its own tab value so none of the sidebar's own rows
-// (Single Post, Weekly Plan, History, Competitor Analysis) incorrectly
-// show as active while a user is actually on the Video tab.
+// "single"/"video" have no dedicated nav row on mobile (both are reached
+// via the content-type card grid on the home screen instead — see
+// index.tsx) but still need tab values so none of the sidebar's own rows
+// incorrectly show as active while a user is actually on one of those tabs.
 export type NavTab = "single" | "plan" | "history" | "competitor" | "video";
 
-const NAV_ITEMS: { tab: NavTab; label: string; icon: typeof Megaphone }[] = [
+// Single Post + Video are the primary "Create" entry point (promoted
+// 2026-08-19, per the decision to keep the core flow focused on ad
+// creation). Weekly Plan and Competitor Analysis are demoted into a
+// "More tools" section below rather than deleted — still fully reachable,
+// just not front-and-center.
+const PRIMARY_NAV_ITEMS: { tab: NavTab; label: string; icon: typeof Megaphone }[] = [
   { tab: "single", label: "Single Post", icon: Megaphone },
+  { tab: "video", label: "Video", icon: Video },
+];
+
+const MORE_TOOLS_ITEMS: { tab: NavTab; label: string; icon: typeof Megaphone }[] = [
   { tab: "plan", label: "Weekly Plan", icon: Calendar },
   { tab: "history", label: "History", icon: Clock },
   { tab: "competitor", label: "Competitor Analysis", icon: Binoculars },
@@ -18,9 +26,7 @@ const NAV_ITEMS: { tab: NavTab; label: string; icon: typeof Megaphone }[] = [
 // One component, two renderings via Tailwind breakpoints rather than two
 // separate components — desktop gets a persistent left rail (like
 // Predis's own layout), mobile keeps a compact top bar since a fixed
-// sidebar doesn't work on a phone-width screen. Single Post vs Weekly
-// Plan switching lives as cards on the create screen itself on mobile
-// (see index.tsx) rather than cramming a 4th icon into the mobile bar.
+// sidebar doesn't work on a phone-width screen.
 export function Sidebar({
   tab,
   onNavigate,
@@ -61,7 +67,23 @@ export function Sidebar({
           <span className="font-display text-base font-extrabold text-foreground">Punqle</span>
         </div>
         <nav className="flex flex-1 flex-col gap-1">
-          {NAV_ITEMS.map(({ tab: t, label, icon: Icon }) => (
+          {PRIMARY_NAV_ITEMS.map(({ tab: t, label, icon: Icon }) => (
+            <button
+              key={t}
+              onClick={() => onNavigate(t)}
+              className={[
+                "flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold transition-colors",
+                tab === t ? "bg-primary text-primary-foreground" : "text-secondary-foreground hover:bg-secondary",
+              ].join(" ")}
+            >
+              <Icon className="h-4 w-4" />
+              {label}
+            </button>
+          ))}
+          <span className="mb-1 mt-4 px-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+            More tools
+          </span>
+          {MORE_TOOLS_ITEMS.map(({ tab: t, label, icon: Icon }) => (
             <button
               key={t}
               onClick={() => onNavigate(t)}
@@ -134,6 +156,16 @@ export function Sidebar({
             <span className="font-display text-sm font-extrabold text-foreground">Punqle</span>
           </div>
           <div className="flex shrink-0 items-center gap-1">
+            <button
+              onClick={() => onNavigate("plan")}
+              aria-label="Weekly Plan"
+              className={[
+                "flex h-9 w-9 items-center justify-center rounded-full",
+                tab === "plan" ? "bg-primary text-primary-foreground" : "text-secondary-foreground hover:bg-secondary",
+              ].join(" ")}
+            >
+              <Calendar className="h-4 w-4" />
+            </button>
             <button
               onClick={() => onNavigate("history")}
               aria-label="History"

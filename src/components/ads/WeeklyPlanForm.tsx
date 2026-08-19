@@ -102,6 +102,7 @@ export function WeeklyPlanForm({
 
   return (
     <>
+      <h1 className="font-display mb-3 text-lg font-extrabold text-foreground">Weekly Plan</h1>
       <div className="mb-5 rounded-2xl bg-card p-4" style={{ boxShadow: "var(--shadow-card)" }}>
         <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
           Your business type
