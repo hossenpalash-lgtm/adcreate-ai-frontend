@@ -14,6 +14,7 @@ import {
 import { signInWithPassword, signUpWithPassword } from "@/lib/supabase";
 import { useScrolled } from "@/lib/use-scrolled";
 import { AIToolMarquee } from "@/components/ToolMarquee";
+import { RealAdShowcase } from "@/components/auth/RealAdShowcase";
 import { PunqleLogo } from "@/components/PunqleLogo";
 import { WorkflowShowcase } from "@/components/auth/WorkflowShowcase";
 
@@ -287,6 +288,13 @@ export function LoginScreen() {
       </div>
 
       <WorkflowShowcase />
+
+      <RealAdShowcase
+        onCreateClick={() => {
+          setFormVisible(true);
+          window.scrollTo({ top: 0, behavior: "smooth" });
+        }}
+      />
 
       <p className="relative z-10 mt-10 text-center text-xs text-muted-foreground">
         Punqle is operated by HOSSEN, MD MOSHARRAF &middot; ABN 47 183 516 336
