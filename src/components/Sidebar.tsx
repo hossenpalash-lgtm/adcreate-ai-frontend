@@ -1,4 +1,4 @@
-import { Binoculars, Calendar, Clock, Gift, LogOut, Megaphone, Package, Palette, Sparkles } from "lucide-react";
+import { Binoculars, Calendar, Clock, CreditCard, Gift, LogOut, Megaphone, Package, Palette, Sparkles } from "lucide-react";
 import { useScrolled } from "@/lib/use-scrolled";
 
 // "video" has no dedicated nav row (same as "single"/"plan" — all three
@@ -27,6 +27,7 @@ export function Sidebar({
   onOpenBrandKit,
   onOpenProductCatalog,
   onOpenReferral,
+  onOpenBilling,
   onSignOut,
 }: {
   tab: NavTab;
@@ -34,6 +35,7 @@ export function Sidebar({
   onOpenBrandKit: () => void;
   onOpenProductCatalog: () => void;
   onOpenReferral: () => void;
+  onOpenBilling: () => void;
   onSignOut: () => void;
 }) {
   const scrolled = useScrolled();
@@ -92,6 +94,13 @@ export function Sidebar({
           >
             <Gift className="h-4 w-4" />
             Invite &amp; Earn
+          </button>
+          <button
+            onClick={onOpenBilling}
+            className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold text-secondary-foreground hover:bg-secondary"
+          >
+            <CreditCard className="h-4 w-4" />
+            Plans &amp; Billing
           </button>
         </nav>
         <button
@@ -165,6 +174,13 @@ export function Sidebar({
               className="flex h-9 w-9 items-center justify-center rounded-full text-secondary-foreground hover:bg-secondary"
             >
               <Gift className="h-4 w-4" />
+            </button>
+            <button
+              onClick={onOpenBilling}
+              aria-label="Plans & Billing"
+              className="flex h-9 w-9 items-center justify-center rounded-full text-secondary-foreground hover:bg-secondary"
+            >
+              <CreditCard className="h-4 w-4" />
             </button>
             <button
               onClick={onSignOut}

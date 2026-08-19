@@ -16,6 +16,7 @@ import { supabase, signOut, type Session } from "../lib/supabase";
 import { redeemReferral } from "../lib/api";
 import { Sentry } from "../lib/sentry";
 import { LoginScreen } from "../components/auth/LoginScreen";
+import { BillingPanel } from "../components/ads/BillingPanel";
 import { BrandKitPanel } from "../components/ads/BrandKitPanel";
 import { ProductCatalogPanel } from "../components/ads/ProductCatalogPanel";
 import { ReferralPanel } from "../components/ads/ReferralPanel";
@@ -131,6 +132,14 @@ function RootComponent() {
   const [brandKitOpen, setBrandKitOpen] = useState(false);
   const [productCatalogOpen, setProductCatalogOpen] = useState(false);
   const [referralOpen, setReferralOpen] = useState(false);
+  // Lazy initializer (runs synchronously at first render, before any
+  // effect) rather than a useEffect checking window.location.search —
+  // the router normalizes the URL and strips unrecognised params like
+  // `billing` early enough to beat a plain effect, which silently
+  // dropped the auto-open on Stripe's redirect back in earlier testing.
+  const [billingOpen, setBillingOpen] = useState(
+    () => typeof window !== "undefined" && new URLSearchParams(window.location.search).has("billing"),
+  );
   const navigate = useNavigate();
   // strict: false — root wraps every route generically, so it can't
   // assume it's on "/" the way index.tsx's own Route.useSearch() can.
@@ -180,6 +189,12 @@ function RootComponent() {
       setProductCatalogOpen(true);
     }
   }, []);
+
+  // Stripe Checkout redirects the whole browser back to "/" with
+  // ?billing=success or ?billing=cancelled — same round-trip pattern as
+  // the Shopify OAuth callback above (see billingOpen's lazy initializer
+  // for why this can't be a useEffect). BillingPanel itself reads and
+  // clears the param once open.
 
   useEffect(() => {
     if (!session) return;
@@ -232,6 +247,7 @@ function RootComponent() {
               onOpenBrandKit={() => setBrandKitOpen(true)}
               onOpenProductCatalog={() => setProductCatalogOpen(true)}
               onOpenReferral={() => setReferralOpen(true)}
+              onOpenBilling={() => setBillingOpen(true)}
               onSignOut={() => signOut()}
             />
             <div className="mx-auto flex w-full max-w-md flex-1 flex-col lg:max-w-3xl">
@@ -240,6 +256,7 @@ function RootComponent() {
             <BrandKitPanel open={brandKitOpen} onClose={() => setBrandKitOpen(false)} />
             <ProductCatalogPanel open={productCatalogOpen} onClose={() => setProductCatalogOpen(false)} />
             <ReferralPanel open={referralOpen} onClose={() => setReferralOpen(false)} />
+            <BillingPanel open={billingOpen} onClose={() => setBillingOpen(false)} />
           </>
         )}
       </div>

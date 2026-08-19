@@ -442,6 +442,31 @@ export function syncShopifyProducts(): Promise<{ products: ApiImportedProduct[] 
   return apiFetch<{ products: ApiImportedProduct[] }>("/shopify/sync", { method: "POST" });
 }
 
+export type SubscriptionTier = "starter" | "growth" | "pro";
+
+export interface ApiSubscriptionStatus {
+  subscribed: boolean;
+  tier: SubscriptionTier | null;
+  status: string | null;
+  current_period_end: string | null;
+}
+
+export function fetchSubscriptionStatus(): Promise<ApiSubscriptionStatus> {
+  return apiFetch<ApiSubscriptionStatus>("/billing/subscription");
+}
+
+export function createCheckoutSession(tier: SubscriptionTier): Promise<{ checkout_url: string }> {
+  return apiFetch<{ checkout_url: string }>("/billing/checkout", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ tier }),
+  });
+}
+
+export function createPortalSession(): Promise<{ portal_url: string }> {
+  return apiFetch<{ portal_url: string }>("/billing/portal", { method: "POST" });
+}
+
 export interface ApiCompetitorAnalysisResponse {
   competitor_name: string;
   summary: string;
