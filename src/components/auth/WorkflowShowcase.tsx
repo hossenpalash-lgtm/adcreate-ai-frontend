@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Check, ChevronDown, Hash, MessageSquareText, Palette, PenLine, Sparkles } from "lucide-react";
 
 // Full-bleed dark "how it works" section — its own distinct screen as
@@ -8,11 +9,13 @@ import { Check, ChevronDown, Hash, MessageSquareText, Palette, PenLine, Sparkles
 // runs one video engine internally, there's no "Seedance/Kling/Sora"
 // choice to show), no Upscale/Extend (not built), and no fabricated
 // "Trusted by 50,000+ creators" stat.
-const FORMATS = [
-  { label: "Square", selected: true },
-  { label: "Feed (4:5)", selected: false },
-  { label: "Story (9:16)", selected: false },
-];
+//
+// Both mockups are genuinely interactive (format picker actually
+// switches, tool pills actually toggle) rather than a static image —
+// this is still just a landing-page illustration for signed-out
+// visitors, so nothing here calls the backend or touches real ad data,
+// it's only ever local UI state reset on reload.
+const FORMATS = ["Square", "Feed (4:5)", "Story (9:16)"];
 
 const EDIT_TOOLS = [
   { icon: PenLine, label: "Edit" },
@@ -22,6 +25,21 @@ const EDIT_TOOLS = [
 ];
 
 export function WorkflowShowcase() {
+  const [format, setFormat] = useState("Square");
+  const [activeTools, setActiveTools] = useState<Set<string>>(() => new Set());
+
+  const toggleTool = (label: string) => {
+    setActiveTools((prev) => {
+      const next = new Set(prev);
+      if (next.has(label)) {
+        next.delete(label);
+      } else {
+        next.add(label);
+      }
+      return next;
+    });
+  };
+
   return (
     <section className="relative left-1/2 z-10 mt-16 w-screen -translate-x-1/2 bg-[#050505] px-6 py-16 sm:px-10 sm:py-20">
       <div className="mx-auto flex max-w-5xl flex-col items-center text-center">
@@ -53,16 +71,21 @@ export function WorkflowShowcase() {
               <div className="flex items-center justify-between px-5 py-4">
                 <span className="text-sm font-semibold text-white/60">Format</span>
                 <span className="flex items-center gap-1.5 text-base font-semibold text-white">
-                  Square
+                  {format}
                   <ChevronDown className="h-4 w-4 text-white/60" />
                 </span>
               </div>
               <div className="border-t border-white/10">
-                {FORMATS.map(({ label, selected }) => (
-                  <div key={label} className="flex items-center justify-between px-5 py-2.5 text-sm text-white/80">
+                {FORMATS.map((label) => (
+                  <button
+                    key={label}
+                    type="button"
+                    onClick={() => setFormat(label)}
+                    className="flex w-full items-center justify-between px-5 py-2.5 text-left text-sm text-white/80 transition-colors hover:bg-white/5"
+                  >
                     {label}
-                    {selected && <Check className="h-4 w-4 text-white" />}
-                  </div>
+                    {format === label && <Check className="h-4 w-4 text-white" />}
+                  </button>
                 ))}
               </div>
             </div>
@@ -86,15 +109,25 @@ export function WorkflowShowcase() {
               loading="lazy"
             />
             <div className="relative grid w-full max-w-[280px] grid-cols-2 gap-2">
-              {EDIT_TOOLS.map(({ icon: Icon, label }) => (
-                <span
-                  key={label}
-                  className="flex items-center justify-center gap-1.5 rounded-xl border border-white/15 bg-white/15 px-3 py-3 text-sm font-semibold text-white backdrop-blur-md"
-                >
-                  <Icon className="h-4 w-4" />
-                  {label}
-                </span>
-              ))}
+              {EDIT_TOOLS.map(({ icon: Icon, label }) => {
+                const active = activeTools.has(label);
+                return (
+                  <button
+                    key={label}
+                    type="button"
+                    onClick={() => toggleTool(label)}
+                    className={[
+                      "flex items-center justify-center gap-1.5 rounded-xl border px-3 py-3 text-sm font-semibold backdrop-blur-md transition-colors",
+                      active
+                        ? "border-white bg-white text-[#050505]"
+                        : "border-white/15 bg-white/15 text-white hover:bg-white/25",
+                    ].join(" ")}
+                  >
+                    <Icon className="h-4 w-4" />
+                    {label}
+                  </button>
+                );
+              })}
             </div>
           </div>
         </div>
