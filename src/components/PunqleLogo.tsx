@@ -1,3 +1,5 @@
+import { useId } from "react";
+
 // Punqle's brand mark: an open book with a crescent moon resting atop the
 // spine — chosen after evaluating several directions (a crossed-petal
 // "shapla" bloom, the Jatiyo Sriti Shoudho monument, a kite) against real
@@ -12,6 +14,7 @@
 // elsewhere in the app, which stay as-is) — same className-driven sizing
 // convention as every lucide icon.
 export function PunqleLogo({ className }: { className?: string }) {
+  const maskId = useId();
   return (
     <svg
       viewBox="0 0 24 24"
@@ -27,10 +30,19 @@ export function PunqleLogo({ className }: { className?: string }) {
         strokeLinejoin="round"
       />
       <line x1="12" y1="8" x2="12" y2="13.5" stroke="currentColor" strokeWidth="1" />
-      <path
-        d="M12 3 A2 2 0 1 1 12 7 A1.3 1.3 0 1 0 12 3 Z"
-        fill="currentColor"
-      />
+      {/* Crescent moon as a mask (currentColor rect punched by a black
+          circle) rather than the more common two-arc "D" path — that
+          construction has its endpoints exactly diametrically opposite,
+          a degenerate case that silently rendered as nothing when
+          rasterizing the app-icon PNGs with sharp/librsvg. The mask
+          approach is unambiguous and doesn't need a hardcoded background
+          color to "bite" against, so it also works if this logo is ever
+          placed on something other than the dark gradient badge. */}
+      <mask id={maskId}>
+        <circle cx="12" cy="4.6" r="2.3" fill="white" />
+        <circle cx="13" cy="3.9" r="1.9" fill="black" />
+      </mask>
+      <rect x="8.5" y="1.1" width="7" height="7" fill="currentColor" mask={`url(#${maskId})`} />
     </svg>
   );
 }
