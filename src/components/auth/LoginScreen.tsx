@@ -14,6 +14,7 @@ import {
 import { signInWithPassword, signUpWithPassword } from "@/lib/supabase";
 import { useScrolled } from "@/lib/use-scrolled";
 import { AIToolMarquee } from "@/components/ToolMarquee";
+import { PunqleLogo } from "@/components/PunqleLogo";
 import { WorkflowShowcase } from "@/components/auth/WorkflowShowcase";
 
 // Desktop-only floating photo cards around the login form — real
@@ -142,7 +143,7 @@ export function LoginScreen() {
               className="flex h-8 w-8 items-center justify-center rounded-lg text-primary-foreground"
               style={{ background: "var(--gradient-primary)" }}
             >
-              <Sparkles className="h-4 w-4" />
+              <PunqleLogo className="h-4 w-4" />
             </div>
             <span className="font-display text-base font-extrabold tracking-tight text-foreground">Punqle</span>
           </div>
@@ -190,7 +191,7 @@ export function LoginScreen() {
           AI ad creation, made simple
         </span>
         <div className="flex h-14 w-14 items-center justify-center rounded-2xl text-primary-foreground" style={{ background: "var(--gradient-primary)" }}>
-          <Sparkles className="h-7 w-7" />
+          <PunqleLogo className="h-7 w-7" />
         </div>
         <h1 className="font-display text-2xl font-extrabold text-foreground" aria-label="Punqle">
           <ScrambleText text="Punqle" />

@@ -9,13 +9,13 @@ import {
   Scripts,
 } from "@tanstack/react-router";
 import { useEffect, useState, type ReactNode } from "react";
-import { Sparkles } from "lucide-react";
 
 import appCss from "../styles.css?url";
 import { supabase, signOut, type Session } from "../lib/supabase";
 import { redeemReferral } from "../lib/api";
 import { Sentry } from "../lib/sentry";
 import { LoginScreen } from "../components/auth/LoginScreen";
+import { PunqleLogo } from "../components/PunqleLogo";
 import { BillingPanel } from "../components/ads/BillingPanel";
 import { BrandKitPanel } from "../components/ads/BrandKitPanel";
 import { ProductCatalogPanel } from "../components/ads/ProductCatalogPanel";
@@ -226,7 +226,7 @@ function RootComponent() {
                 className="flex h-20 w-20 items-center justify-center rounded-3xl bg-white/10 text-white"
                 style={{ boxShadow: "0 0 70px 14px rgba(255,255,255,0.16)" }}
               >
-                <Sparkles className="h-10 w-10" />
+                <PunqleLogo className="h-10 w-10" />
               </div>
               <h1 className="font-display text-3xl font-extrabold tracking-wide text-white">Punqle</h1>
             </div>

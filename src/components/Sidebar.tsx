@@ -1,4 +1,5 @@
-import { Binoculars, Calendar, Clock, CreditCard, Gift, LogOut, Megaphone, Package, Palette, Sparkles, Video } from "lucide-react";
+import { Binoculars, Calendar, Clock, CreditCard, Gift, LogOut, Megaphone, Package, Palette, Video } from "lucide-react";
+import { PunqleLogo } from "@/components/PunqleLogo";
 import { useScrolled } from "@/lib/use-scrolled";
 
 // "single"/"video" have no dedicated nav row on mobile (both are reached
@@ -62,7 +63,7 @@ export function Sidebar({
             className="flex h-8 w-8 items-center justify-center rounded-lg text-primary-foreground"
             style={{ background: "var(--gradient-primary)" }}
           >
-            <Sparkles className="h-4 w-4" />
+            <PunqleLogo className="h-4 w-4" />
           </div>
           <span className="font-display text-base font-extrabold text-foreground">Punqle</span>
         </div>
@@ -151,7 +152,7 @@ export function Sidebar({
               className="flex h-8 w-8 items-center justify-center rounded-full text-primary-foreground"
               style={{ background: "var(--gradient-primary)" }}
             >
-              <Sparkles className="h-4 w-4" />
+              <PunqleLogo className="h-4 w-4" />
             </div>
             <span className="font-display text-sm font-extrabold text-foreground">Punqle</span>
           </div>
