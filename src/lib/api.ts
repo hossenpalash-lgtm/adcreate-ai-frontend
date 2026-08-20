@@ -366,6 +366,38 @@ export function fetchIdeaLabsIdeas(): Promise<{ ideas: string[] }> {
   return apiFetch<{ ideas: string[] }>("/ads/idea-labs");
 }
 
+export type VisualDirection = "clean_premium" | "bold_energetic" | "warm_lifestyle";
+
+export interface ApiUnderstandIdeaResponse {
+  content_type: string;
+  tone: string;
+  visual_direction: VisualDirection;
+  summary_sentence: string;
+}
+
+export function understandIdea(ideaText: string): Promise<ApiUnderstandIdeaResponse> {
+  return apiFetch<ApiUnderstandIdeaResponse>("/ads/understand-idea", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ idea_text: ideaText }),
+  });
+}
+
+export type CaptionTone = "professional" | "friendly" | "bold" | "playful" | "luxury";
+export type CaptionLength = "short" | "medium" | "long";
+
+export function generateCaptions(
+  itemDescription: string,
+  tone: CaptionTone,
+  length: CaptionLength,
+): Promise<{ captions: ApiAdCaptionVariant[] }> {
+  return apiFetch<{ captions: ApiAdCaptionVariant[] }>("/ads/generate-captions", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ item_description: itemDescription, tone, length }),
+  });
+}
+
 export interface ApiBlogToPostsResponse {
   title: string;
   ideas: string[];
