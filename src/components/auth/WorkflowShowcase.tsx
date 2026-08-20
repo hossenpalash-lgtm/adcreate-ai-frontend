@@ -43,11 +43,11 @@ export function WorkflowShowcase() {
   return (
     <section className="relative left-1/2 z-10 mt-16 w-screen -translate-x-1/2 bg-[#050505] px-6 py-16 sm:px-10 sm:py-20">
       <div className="mx-auto flex max-w-5xl flex-col items-center text-center">
-        <span className="mb-5 inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/10 px-3.5 py-1.5 text-xs font-semibold text-white/80 backdrop-blur-md">
+        <span className="mb-5 inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/10 px-3.5 py-1.5 text-xs font-medium text-white/80 backdrop-blur-md">
           <Sparkles className="h-3 w-3" />
           How It Works
         </span>
-        <h2 className="font-display text-3xl font-extrabold text-white sm:text-4xl">
+        <h2 className="text-balance font-display text-3xl font-extrabold text-white sm:text-4xl">
           Go from idea <span className="italic">to ad</span> in minutes
         </h2>
         <p className="mt-3 text-sm text-white/60 sm:text-base">Two simple steps. No design skills needed.</p>
@@ -56,7 +56,7 @@ export function WorkflowShowcase() {
       <div className="mx-auto mt-12 grid max-w-5xl grid-cols-1 gap-6 md:grid-cols-2">
         {/* Step 1 — Choose your format */}
         <div className="animate-fade-rise flex flex-col" style={{ animationDelay: "0ms" }}>
-          <span className="mb-3 inline-flex w-fit items-center rounded-full border border-white/15 px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-white/50">
+          <span className="mb-3 inline-flex w-fit items-center rounded-full border border-white/15 px-3 py-1 text-[11px] font-medium uppercase tracking-wider text-white/50">
             Step 1
           </span>
           <h3 className="font-display text-xl font-bold text-white">Choose your format</h3>
@@ -69,7 +69,7 @@ export function WorkflowShowcase() {
             </span>
             <div className="relative w-full max-w-[280px] overflow-hidden rounded-2xl border border-white/10 bg-[#0d0d0d] backdrop-blur-md">
               <div className="flex items-center justify-between px-5 py-4">
-                <span className="text-sm font-semibold text-white/60">Format</span>
+                <span className="text-sm font-medium text-white/60">Format</span>
                 <span className="flex items-center gap-1.5 text-base font-semibold text-white">
                   {format}
                   <ChevronDown className="h-4 w-4 text-white/60" />
@@ -94,7 +94,7 @@ export function WorkflowShowcase() {
 
         {/* Step 2 — Customize your Ad */}
         <div className="animate-fade-rise flex flex-col" style={{ animationDelay: "110ms" }}>
-          <span className="mb-3 inline-flex w-fit items-center rounded-full border border-white/15 px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-white/50">
+          <span className="mb-3 inline-flex w-fit items-center rounded-full border border-white/15 px-3 py-1 text-[11px] font-medium uppercase tracking-wider text-white/50">
             Step 2
           </span>
           <h3 className="font-display text-xl font-bold text-white">Customize your Ad</h3>

@@ -125,7 +125,7 @@ export function LoginScreen() {
   };
 
   return (
-    <main className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden px-6 py-10">
+    <main className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden px-6 pb-10 pt-24">
       {/* Floating frosted-glass top nav — logo left, single CTA right
           (mirrors Arcads' "Login or Sign up" pattern). Since this page
           already IS the sign-in/sign-up form, the CTA toggles mode
@@ -181,13 +181,13 @@ export function LoginScreen() {
           <img src={image} alt="" className="h-56 w-full object-cover" loading="lazy" />
           <div className="absolute inset-x-0 bottom-0 flex items-center gap-1.5 bg-gradient-to-t from-black/70 to-transparent px-2.5 pb-2 pt-6">
             <Icon className="h-3 w-3 shrink-0 text-white" />
-            <span className="text-[11px] font-semibold leading-tight text-white">{caption}</span>
+            <span className="text-[11px] font-medium leading-tight text-white">{caption}</span>
           </div>
         </div>
       ))}
 
       <div className="relative z-10 mb-8 flex flex-col items-center gap-2 text-center">
-        <span className="mb-1 inline-flex items-center gap-1.5 rounded-full bg-secondary px-3 py-1 text-xs font-semibold text-secondary-foreground">
+        <span className="mb-1 inline-flex items-center gap-1.5 rounded-full bg-secondary px-3 py-1 text-xs font-medium text-secondary-foreground">
           <Sparkles className="h-3 w-3" />
           AI ad creation, made simple
         </span>
@@ -232,7 +232,7 @@ export function LoginScreen() {
       ) : (
       <form onSubmit={handleSubmit} className="relative z-10 w-full max-w-sm animate-splash-in">
         <div className="mb-4">
-          <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+          <label className="mb-1.5 block text-xs font-medium uppercase tracking-wider text-muted-foreground">
             Email
           </label>
           <input
@@ -247,7 +247,7 @@ export function LoginScreen() {
         </div>
 
         <div className="mb-6">
-          <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+          <label className="mb-1.5 block text-xs font-medium uppercase tracking-wider text-muted-foreground">
             Password
           </label>
           <input

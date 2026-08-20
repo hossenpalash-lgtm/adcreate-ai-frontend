@@ -12,13 +12,23 @@ const VIDEO_ADS = SHOWCASE_ADS.filter((ad): ad is VideoAd => ad.type === "video"
 // (7/5, 5/7, 6/6) rather than a plain 3x2 grid, so the layout itself
 // doesn't read as "generic feature cards." Paired 1:1 with IMAGE_ADS by
 // index since there are always exactly 6.
+//
+// Aspect is locked to "aspect-square" for all six: every source JPEG in
+// public/showcase-ads/ is a real 1024x1024 square render with the "Made
+// with Punqle" badge baked near the top-right corner and the headline/
+// subcopy baked full-width at the bottom. Any narrower ratio here (the
+// grid previously used aspect-[4/5] on some cards) makes object-cover
+// crop width symmetrically from a square source — which clips the
+// badge on the right edge. The visual variety instead comes entirely
+// from the varied col-span widths below (each card is still a
+// different on-screen size, just uncropped).
 const IMAGE_LAYOUT = [
-  { span: "lg:col-span-7", aspect: "aspect-[4/5]" },
-  { span: "lg:col-span-5", aspect: "aspect-[4/5]" },
+  { span: "lg:col-span-7", aspect: "aspect-square" },
+  { span: "lg:col-span-5", aspect: "aspect-square" },
   { span: "lg:col-span-5", aspect: "aspect-square" },
   { span: "lg:col-span-7", aspect: "aspect-square" },
-  { span: "lg:col-span-6", aspect: "aspect-[4/5]" },
-  { span: "lg:col-span-6", aspect: "aspect-[4/5]" },
+  { span: "lg:col-span-6", aspect: "aspect-square" },
+  { span: "lg:col-span-6", aspect: "aspect-square" },
 ];
 
 // Middle video sits slightly elevated and larger — the "subtle editorial
@@ -36,7 +46,7 @@ function CardMeta({ category, detail, cta }: { category: string; detail: string;
   return (
     <div className="mt-2.5 flex items-center justify-between gap-2 px-0.5">
       <div className="flex flex-col text-xs text-muted-foreground">
-        <span className="font-semibold text-foreground">{category}</span>
+        <span className="font-medium text-foreground">{category}</span>
         <span>{detail}</span>
       </div>
       <span className="shrink-0 whitespace-nowrap rounded-full bg-secondary px-3.5 py-1.5 text-xs font-semibold text-secondary-foreground">
@@ -112,7 +122,7 @@ function VideoAdCard({ ad, offsetClass, delayMs }: { ad: VideoAd; offsetClass: s
           preload="metadata"
           className="h-full w-full object-cover"
         />
-        <span className="absolute left-3 top-3 rounded-full bg-black/45 px-2.5 py-1 text-[10px] font-semibold text-white backdrop-blur-sm">
+        <span className="absolute left-3 top-3 rounded-full bg-black/45 px-2.5 py-1 text-[10px] font-medium text-white backdrop-blur-sm">
           Made with Punqle
         </span>
       </div>
@@ -127,7 +137,7 @@ export function RealAdShowcase({ onCreateClick }: { onCreateClick: () => void })
   return (
     <section className="relative z-10 mx-auto mt-16 w-full max-w-5xl px-1">
       <div className="flex flex-col items-center text-center">
-        <h2 className="font-display text-3xl font-extrabold text-foreground sm:text-4xl">
+        <h2 className="text-balance font-display text-3xl font-extrabold text-foreground sm:text-4xl">
           See what you can create <span className="italic">with Punqle</span>
         </h2>
         <p className="mt-3 max-w-md text-sm text-muted-foreground sm:text-base">
