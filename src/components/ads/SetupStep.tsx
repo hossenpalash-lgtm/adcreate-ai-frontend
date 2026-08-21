@@ -2,6 +2,7 @@ import {
   AlertCircle,
   ArrowLeft,
   Camera,
+  ChevronDown,
   Facebook,
   Globe,
   Instagram,
@@ -61,6 +62,7 @@ export function SetupStep({
   onBack: () => void;
   error: string | null;
 }) {
+  const [moreOptionsOpen, setMoreOptionsOpen] = useState(false);
   const [showLinkInput, setShowLinkInput] = useState(false);
   const [productUrl, setProductUrl] = useState("");
   const [fetchingLink, setFetchingLink] = useState(false);
@@ -140,52 +142,66 @@ export function SetupStep({
         <img src={previewUrl} alt="Selected" className="mb-3 max-h-32 rounded-xl object-contain" />
       )}
 
-      <div className="mb-6 flex flex-col items-center gap-2">
-        {!showLinkInput ? (
-          <button
-            onClick={() => setShowLinkInput(true)}
-            className="flex items-center gap-1 text-xs font-semibold text-primary underline-offset-2 hover:underline"
-          >
-            <Link2 className="h-3 w-3" />
-            Or paste a product link
-          </button>
-        ) : (
-          <div className="flex w-full gap-2">
-            <input
-              type="url"
-              value={productUrl}
-              onChange={(e) => setProductUrl(e.target.value)}
-              placeholder="https://yourstore.com/products/..."
-              disabled={fetchingLink}
-              className="flex-1 rounded-full border border-input bg-background px-3 py-2 text-xs text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-            />
+      {/* Secondary visual-source options — collapsed by default
+          (progressive disclosure) so the primary 3 choices above aren't
+          crowded by less-common paths. */}
+      <button
+        onClick={() => setMoreOptionsOpen((v) => !v)}
+        className="mb-6 flex items-center gap-1 text-xs font-semibold text-muted-foreground"
+      >
+        More options
+        <ChevronDown className={["h-3.5 w-3.5 transition-transform", moreOptionsOpen ? "rotate-180" : ""].join(" ")} />
+      </button>
+      {moreOptionsOpen && (
+        <div className="-mt-4 mb-6 flex w-full flex-col items-center gap-2">
+          {!showLinkInput ? (
             <button
-              onClick={handleFetchProductLink}
-              disabled={!productUrl.trim() || fetchingLink}
-              className="flex shrink-0 items-center justify-center gap-1 rounded-full bg-secondary px-3 py-2 text-xs font-semibold text-secondary-foreground disabled:opacity-60"
+              onClick={() => setShowLinkInput(true)}
+              className="flex items-center gap-1 text-xs font-semibold text-primary underline-offset-2 hover:underline"
             >
-              {fetchingLink ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : "Fetch"}
+              <Link2 className="h-3 w-3" />
+              Product link
             </button>
-          </div>
-        )}
-        <ProductPicker
-          onSelect={(description, photoFile) => {
-            onDescriptionOverride(description);
-            if (photoFile) {
-              onFileChange(photoFile);
-            } else {
-              onUseAiImage();
-            }
-          }}
-        />
-        {linkError && <p className="text-xs font-medium text-destructive">{linkError}</p>}
-      </div>
+          ) : (
+            <div className="flex w-full gap-2">
+              <input
+                type="url"
+                value={productUrl}
+                onChange={(e) => setProductUrl(e.target.value)}
+                placeholder="https://yourstore.com/products/..."
+                disabled={fetchingLink}
+                className="flex-1 rounded-full border border-input bg-background px-3 py-2 text-xs text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+              />
+              <button
+                onClick={handleFetchProductLink}
+                disabled={!productUrl.trim() || fetchingLink}
+                className="flex shrink-0 items-center justify-center gap-1 rounded-full bg-secondary px-3 py-2 text-xs font-semibold text-secondary-foreground disabled:opacity-60"
+              >
+                {fetchingLink ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : "Fetch"}
+              </button>
+            </div>
+          )}
+          <ProductPicker
+            onSelect={(description, photoFile) => {
+              onDescriptionOverride(description);
+              if (photoFile) {
+                onFileChange(photoFile);
+              } else {
+                onUseAiImage();
+              }
+            }}
+          />
+          {linkError && <p className="text-xs font-medium text-destructive">{linkError}</p>}
+        </div>
+      )}
 
       {/* Platform */}
       <label className="mb-2 block w-full text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-        Platform
+        Where will you post?
       </label>
-      <p className="mb-2 w-full text-left text-xs text-muted-foreground">Punqle picks the right shape automatically.</p>
+      <p className="mb-2 w-full text-left text-xs text-muted-foreground">
+        Punqle automatically adapts the design to each platform.
+      </p>
       <div className="mb-6 grid w-full grid-cols-2 gap-2 sm:grid-cols-4">
         {PLATFORM_OPTIONS.map((opt) => {
           const Icon = PLATFORM_ICONS[opt.id];
@@ -257,8 +273,8 @@ export function SetupStep({
           className="flex flex-1 items-center justify-center gap-2 rounded-full px-5 py-4 text-base font-semibold text-primary-foreground disabled:opacity-60"
           style={{ background: "var(--gradient-primary)" }}
         >
+          Generate {versions} variation{versions > 1 ? "s" : ""}
           <Sparkles className="h-5 w-5" />
-          Generate {versions} version{versions > 1 ? "s" : ""}
         </button>
       </div>
     </div>

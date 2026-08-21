@@ -38,8 +38,8 @@ const CONTENT_TYPES: {
   description: string;
   icon: typeof Megaphone;
 }[] = [
-  { tab: "single", label: "Image Post", description: "One ad, ready in seconds", icon: Megaphone },
-  { tab: "video", label: "Video", description: "A short video ad (10 credits)", icon: Video },
+  { tab: "single", label: "Image Post", description: "Create a polished post in seconds", icon: Megaphone },
+  { tab: "video", label: "Video", description: "Short-form video, made for social", icon: Video },
 ];
 
 function HomeScreen() {
@@ -74,13 +74,11 @@ function HomeScreen() {
 
       {(tab === "single" || tab === "video") && (
         <>
-          <div className="mb-1 flex items-center gap-1.5">
-            <Sparkles className="h-3.5 w-3.5 text-accent" />
-            <span className="text-xs font-semibold uppercase tracking-wider text-accent">Social Content</span>
-          </div>
-          <h1 className="font-display mb-3 text-lg font-extrabold text-foreground">
-            Create Your Next Post
+          <h1 className="font-display mb-1 flex items-center gap-2 text-xl font-extrabold text-foreground">
+            <Sparkles className="h-4 w-4 text-accent" />
+            Social Content
           </h1>
+          <p className="mb-4 text-sm text-muted-foreground">Create scroll-stopping posts for your social media.</p>
           <div className="mb-6 grid grid-cols-2 gap-2">
             {CONTENT_TYPES.map(({ tab: t, label, description, icon: Icon }, i) => (
               <button

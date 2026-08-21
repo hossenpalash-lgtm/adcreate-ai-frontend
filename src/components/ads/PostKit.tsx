@@ -1,4 +1,5 @@
-import { AlertCircle, Calendar, Check, Download } from "lucide-react";
+import { AlertCircle, Calendar, Check, Download, Pencil } from "lucide-react";
+import { useState } from "react";
 import type { ApiAdCaptionVariant, CaptionLength, CaptionTone } from "@/lib/api";
 import type { Box, BrandKit, EditOptions } from "@/lib/canvas-text";
 import { CaptionPicker } from "./CaptionPicker";
@@ -106,10 +107,21 @@ export function PostKit({
   onReset: () => void;
 }) {
   const hashtagsAdded = editedCaption.includes("#");
+  const [editorOpen, setEditorOpen] = useState(false);
 
   return (
     <>
-      {compositedUrl && (
+      {/* The static hero is the default view — dominant, uncluttered, no
+          drag handles — matching "keep the primary result visually
+          dominant." The interactive DragDropEditor (dashed outlines,
+          resize handles) only appears once the user actually asks to
+          edit, via "Edit in Editor" below. */}
+      {compositedUrl && !editorOpen && (
+        <div className="mb-3 overflow-hidden rounded-2xl border border-border" style={{ boxShadow: "var(--shadow-card)" }}>
+          <img src={compositedUrl} alt="Your generated post" className="block w-full" />
+        </div>
+      )}
+      {compositedUrl && editorOpen && (
         <DragDropEditor
           imageUrl={compositedUrl}
           textBox={textBox}
@@ -120,6 +132,13 @@ export function PostKit({
           showLogo={showLogo}
         />
       )}
+      <button
+        onClick={() => setEditorOpen((v) => !v)}
+        className="mb-5 flex w-full items-center justify-center gap-1.5 rounded-full bg-secondary px-4 py-2.5 text-xs font-semibold text-secondary-foreground"
+      >
+        <Pencil className="h-3.5 w-3.5" />
+        {editorOpen ? "Done editing" : "Edit in Editor"}
+      </button>
 
       {/* Real-only readiness checklist — every row is a true/false fact
           about generated state, never an invented quality score. */}

@@ -1,4 +1,4 @@
-import { Check, Sparkles } from "lucide-react";
+import { Check, Sparkles, Star } from "lucide-react";
 
 // The dedicated "compare and pick" moment the spec asks for — previously
 // generated images landed directly inside the Post Kit's small thumbnail
@@ -16,13 +16,10 @@ export function ResultsGrid({
 }) {
   return (
     <div className="flex flex-col items-center text-center">
-      <div className="mb-2 flex items-center gap-1.5">
-        <Sparkles className="h-3.5 w-3.5" style={{ color: "var(--color-accent)" }} />
-        <span className="text-xs font-semibold uppercase tracking-wider" style={{ color: "var(--color-accent)" }}>
-          Ready
-        </span>
-      </div>
-      <h1 className="font-display mb-2 text-xl font-extrabold text-foreground">Pick your favorite</h1>
+      <h1 className="font-display mb-2 flex items-center gap-2 text-xl font-extrabold text-foreground">
+        Your posts are ready
+        <Sparkles className="h-4 w-4" style={{ color: "var(--color-accent)" }} />
+      </h1>
       <p className="mb-6 text-sm text-muted-foreground">
         {images.length > 1 ? `Punqle made ${images.length} options — choose one to finish your post.` : "Your post is ready."}
       </p>
@@ -47,9 +44,10 @@ export function ResultsGrid({
             />
             {i === 0 && images.length > 1 && (
               <span
-                className="absolute left-2 top-2 rounded-full px-2 py-0.5 text-[10px] font-semibold"
+                className="absolute left-2 top-2 flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold"
                 style={{ background: "var(--color-accent)", color: "var(--color-accent-foreground)" }}
               >
+                <Star className="h-2.5 w-2.5 fill-current" />
                 Recommended
               </span>
             )}

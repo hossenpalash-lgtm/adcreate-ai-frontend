@@ -21,20 +21,26 @@ import { IdeaStep } from "./IdeaStep";
 import { PostKit } from "./PostKit";
 import { ResultsGrid } from "./ResultsGrid";
 import { SetupStep } from "./SetupStep";
-import { UnderstandingStep } from "./UnderstandingStep";
 import { VisualDirectionStep } from "./VisualDirectionStep";
 import { WizardProgress } from "./WizardProgress";
 
-type WizardStep = "idea" | "understanding" | "direction" | "setup" | "generating" | "results" | "result";
+type WizardStep = "idea" | "direction" | "setup" | "generating" | "results" | "result";
 
-// Maps the real step machine onto the 4 display stages the spec asks
-// for (① What do you want? → ② Choose a look → ③ Set it up → ④
-// Generate) — purely a UI label, doesn't change the step machine itself.
+// Maps the real step machine onto the 4 display stages (① What do you
+// want? → ② Choose a look → ③ Set it up → ④ Generate) — purely a UI
+// label/nav target, doesn't change the step machine itself. Only stages
+// 1-3 are ever jump targets (see handleProgressNavigate below) — there's
+// no sensible "jump to Generate" without having completed Set it up.
 const PROGRESS_STAGE: Partial<Record<WizardStep, 1 | 2 | 3 | 4>> = {
   idea: 1,
-  understanding: 1,
   direction: 2,
   setup: 3,
+};
+
+const STAGE_STEP: Record<1 | 2 | 3, WizardStep> = {
+  1: "idea",
+  2: "direction",
+  3: "setup",
 };
 
 const pause = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -146,6 +152,15 @@ export function SinglePostForm({
     setUnderstanding(result);
     setVisualDirection(result.visual_direction);
     setStep("direction");
+  };
+
+  // Progress-dot navigation — only completed stages (1-3) are clickable,
+  // and only stages strictly before the current one (no jumping forward
+  // past what's actually been completed). Selections already made on
+  // that step are preserved since this only changes `step`, never resets
+  // any other state.
+  const handleProgressNavigate = (stage: 1 | 2 | 3) => {
+    setStep(STAGE_STEP[stage]);
   };
 
   const handleGenerate = async () => {
@@ -319,18 +334,12 @@ export function SinglePostForm({
 
   return (
     <>
-      {PROGRESS_STAGE[step] && <WizardProgress currentStage={PROGRESS_STAGE[step]!} />}
-
-      {step === "idea" && (
-        <IdeaStep value={description} onChange={setDescription} onContinue={() => setStep("understanding")} />
+      {PROGRESS_STAGE[step] && (
+        <WizardProgress currentStage={PROGRESS_STAGE[step]!} onNavigate={handleProgressNavigate} />
       )}
 
-      {step === "understanding" && (
-        <UnderstandingStep
-          ideaText={description}
-          onContinue={handleUnderstood}
-          onBack={() => setStep("idea")}
-        />
+      {step === "idea" && (
+        <IdeaStep value={description} onChange={setDescription} onContinue={handleUnderstood} />
       )}
 
       {step === "direction" && understanding && (
@@ -339,7 +348,7 @@ export function SinglePostForm({
           selected={visualDirection}
           onSelect={setVisualDirection}
           onContinue={() => setStep("setup")}
-          onBack={() => setStep("understanding")}
+          onBack={() => setStep("idea")}
         />
       )}
 

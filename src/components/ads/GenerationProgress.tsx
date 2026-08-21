@@ -1,12 +1,12 @@
-import { Check, Loader2 } from "lucide-react";
+import { Check, Loader2, Sparkles } from "lucide-react";
 
 const STAGES = [
   "Understanding your idea",
   "Choosing the visual direction",
   "Applying your brand",
-  "Writing the post copy",
+  "Writing the copy",
   "Designing your creative",
-  "Finalizing your post",
+  "Final quality check",
 ];
 
 // A real, honest staged progress checklist — `currentStage` is driven by
@@ -14,12 +14,22 @@ const STAGES = [
 // handleGenerate), not a fake timer. Each row only ticks once its real
 // step has actually resolved. Subtle fade/slide only, no bounce/particles,
 // per the "intelligence and simplicity, not excessive animation" brief.
+// Purple accent on done/active rows ties this to the same "AI moment"
+// language as WizardProgress's dots — this is Punqle's most visible
+// "actively working" beat in the whole flow.
 export function GenerationProgress({ currentStage }: { currentStage: number }) {
   return (
     <div className="flex flex-col items-center px-2 py-8">
-      <div className="mb-8 flex h-12 w-12 items-center justify-center rounded-2xl text-primary-foreground" style={{ background: "var(--gradient-primary)" }}>
+      <div
+        className="mb-3 flex h-12 w-12 items-center justify-center rounded-2xl text-white"
+        style={{ background: "var(--color-accent)" }}
+      >
         <Loader2 className="h-6 w-6 animate-spin" />
       </div>
+      <h1 className="font-display mb-6 flex items-center gap-1.5 text-lg font-extrabold text-foreground">
+        <Sparkles className="h-4 w-4" style={{ color: "var(--color-accent)" }} />
+        Creating your post
+      </h1>
       <div className="flex w-full max-w-xs flex-col gap-3.5">
         {STAGES.map((stage, i) => {
           const done = i < currentStage;
@@ -33,12 +43,9 @@ export function GenerationProgress({ currentStage }: { currentStage: number }) {
               <div
                 className={[
                   "flex h-6 w-6 shrink-0 items-center justify-center rounded-full border text-xs",
-                  done
-                    ? "border-primary bg-primary text-primary-foreground"
-                    : active
-                      ? "border-primary text-primary"
-                      : "border-border text-muted-foreground",
+                  done || active ? "text-white" : "border-border text-muted-foreground",
                 ].join(" ")}
+                style={done || active ? { background: "var(--color-accent)", borderColor: "var(--color-accent)" } : undefined}
               >
                 {done ? <Check className="h-3.5 w-3.5" /> : active ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : null}
               </div>
