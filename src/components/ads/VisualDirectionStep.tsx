@@ -3,54 +3,29 @@ import { useState } from "react";
 import type { VisualDirection } from "@/lib/api";
 import { MORE_VISUAL_DIRECTIONS, VISUAL_DIRECTIONS } from "@/lib/social-wizard";
 
-// Small abstract "mood" swatches — deliberately illustrative, not a real
-// generated photo. There's no single real image per style (the actual
-// output depends on the user's own idea), so an abstract composition is
-// the honest way to preview a *look* rather than implying a fixed result.
-// Pure CSS/inline SVG, zero new assets, zero generation cost.
+// Real mini social-creative previews — one genuine, already-generated
+// Punqle post per style (the same real assets used in the landing page's
+// "Real Ad Showcase" section: real /ads/generate output, real captions,
+// real "Made with Punqle" watermark). Deliberately NOT a live preview
+// regenerated from the user's own idea each visit — doing that for real
+// would mean 3 extra paid Gemini calls (and a 30-45s wait) every single
+// time someone reaches this step, including everyone who never finishes
+// generating, which is a real, unbounded cost this app has never taken
+// on anywhere else. A genuine example of the *style* is the honest,
+// zero-cost middle ground: it's real Punqle output, not a placeholder,
+// just not tied to whatever the visitor happens to type.
+const STYLE_PREVIEW_IMAGE: Record<string, string> = {
+  clean_premium: "/showcase-ads/skincare.jpg",
+  bold_energetic: "/showcase-ads/fitness.jpg",
+  warm_lifestyle: "/showcase-ads/home.jpg",
+  minimal_editorial: "/showcase-ads/saas.jpg",
+  vibrant_playful: "/showcase-ads/food.jpg",
+};
+
 function StylePreview({ id }: { id: VisualDirection | string }) {
-  switch (id) {
-    case "clean_premium":
-      return (
-        <div className="relative h-full w-full" style={{ background: "linear-gradient(135deg, #f6f4f1, #e6e2db)" }}>
-          <div className="absolute left-1/2 top-1/2 h-8 w-8 -translate-x-1/2 -translate-y-1/2 rounded-full border border-black/15" />
-          <div className="absolute bottom-3 left-3 right-3 h-px bg-black/15" />
-        </div>
-      );
-    case "bold_energetic":
-      return (
-        <div className="relative h-full w-full overflow-hidden" style={{ background: "#111114" }}>
-          <div
-            className="absolute -left-4 -top-4 h-16 w-16 rotate-45"
-            style={{ background: "var(--color-accent)" }}
-          />
-        </div>
-      );
-    case "warm_lifestyle":
-      return (
-        <div className="relative h-full w-full" style={{ background: "linear-gradient(160deg, #f3ddc4, #e8b98f)" }}>
-          <div
-            className="absolute bottom-2 right-2 h-10 w-10 rounded-full opacity-60 blur-[2px]"
-            style={{ background: "#fff6ea" }}
-          />
-        </div>
-      );
-    case "minimal_editorial":
-      return (
-        <div className="relative h-full w-full bg-[#fafafa]">
-          <div className="absolute left-1/2 top-1/2 h-1.5 w-1.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-black/40" />
-        </div>
-      );
-    case "vibrant_playful":
-      return (
-        <div
-          className="h-full w-full"
-          style={{ background: "linear-gradient(135deg, #ffb37a, #ff8fa3 55%, #b98bff)" }}
-        />
-      );
-    default:
-      return <div className="h-full w-full bg-secondary" />;
-  }
+  const src = STYLE_PREVIEW_IMAGE[id];
+  if (!src) return <div className="h-full w-full bg-secondary" />;
+  return <img src={src} alt="" className="h-full w-full object-cover" loading="lazy" />;
 }
 
 // Step 2 — 3 AI-recommended style directions instead of browsing a huge
@@ -75,8 +50,8 @@ export function VisualDirectionStep({
 
   return (
     <div className="flex flex-col items-center text-center">
-      <h1 className="font-display mb-2 text-xl font-extrabold text-foreground">Choose a visual direction</h1>
-      <p className="mb-6 text-sm text-muted-foreground">Punqle picked one that fits your idea best.</p>
+      <h1 className="font-display mb-2 text-xl font-extrabold text-foreground">Choose a look</h1>
+      <p className="mb-6 text-sm text-muted-foreground">Punqle picked a style that fits your idea best.</p>
 
       <div className="mb-3 flex w-full flex-col gap-3">
         {options.map((opt) => {
@@ -92,7 +67,7 @@ export function VisualDirectionStep({
               ].join(" ")}
               style={!isSelected ? { boxShadow: "var(--shadow-card)" } : undefined}
             >
-              <div className="h-16 w-16 shrink-0 overflow-hidden rounded-xl">
+              <div className="h-24 w-20 shrink-0 overflow-hidden rounded-xl">
                 <StylePreview id={opt.id} />
               </div>
               <div className="min-w-0 flex-1">
