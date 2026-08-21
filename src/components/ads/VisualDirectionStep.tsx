@@ -21,15 +21,16 @@ import {
 // idea, then every style card picks a different photo from that SAME
 // result pool. One shared search — not one search per style — is what
 // guarantees all the cards stay about the same underlying concept; only
-// which photo (and which CSS style treatment) differs. Style keywords
-// are never part of the search query at all, so they can't out-rank or
-// replace the real subject the way a per-style "subject + mood" query
-// used to. Deliberately NOT a live Gemini regeneration — that would
-// mean extra PAID image-generation calls (and a 30-45s wait) every time
-// anyone reaches this step, including everyone who never finishes
-// generating. Each style's `fallbackImage` (a real, already-generated
-// Punqle post) covers the loading moment and any search that comes up
-// empty — never an empty box, never a fabricated result.
+// which photo (and which mini-layout, see STYLE_PREVIEWS below) differs.
+// Style keywords are never part of the search query at all, so they
+// can't out-rank or replace the real subject the way a per-style
+// "subject + mood" query used to. Deliberately NOT a live Gemini
+// regeneration — that would mean extra PAID image-generation calls (and
+// a 30-45s wait) every time anyone reaches this step, including everyone
+// who never finishes generating. When there's no real subject, every
+// style falls back to its own flat CSS gradient rather than a photo —
+// never an empty box, never a random stock object standing in for a
+// subject that was never stated.
 const ALL_DIRECTIONS = [...VISUAL_DIRECTIONS, ...MORE_VISUAL_DIRECTIONS];
 
 // Pexels has no relevance/caption metadata we can score candidates
@@ -63,99 +64,233 @@ function pickFromPool(pool: ApiStockPhotoResult[], opt: VisualDirectionOption): 
   return pool[Math.min(spread, pool.length - 1)]?.thumbnail_url;
 }
 
-// Turns the shared photo into a genuine mini social-creative per style —
-// a headline + style-specific typography/scrim/composition layered on
-// top via plain CSS, not a second round of AI generation or per-style
-// stock search (that's exactly the drift bug the search-pooling fix
-// solved). Deterministic and free: same photo pool feeds every style,
-// only the overlay treatment differs, so the cards read as "design
-// variations of one concept" rather than five unrelated images.
-const STYLE_TREATMENTS: Record<string, { imgFilter?: string; overlay: (headline: string) => ReactNode }> = {
-  clean_premium: {
-    overlay: (headline) => (
-      <>
-        <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-black/70 via-black/10 to-transparent" />
-        <p className="absolute inset-x-1.5 bottom-1.5 line-clamp-2 text-[6.5px] font-semibold uppercase leading-tight tracking-[0.12em] text-white/95">
-          {headline}
+// Every field a preview can show is REAL, GPT-derived data — never
+// invented filler like a fake "30% OFF" or "Limited time only" that
+// wasn't in the user's idea. `tier1` (the big poster headline) is the
+// real subject when one exists, else the real content type; `tier2` (a
+// smaller line) is the real content type when it adds something tier1
+// doesn't already say; `badge` is the real offer/CTA phrase when one was
+// actually stated. A genuinely generic idea ends up with just tier1 —
+// that's correct, not a bug: there's honestly only one real thing to
+// say about it, so the fix is making that one line read as a real
+// poster headline (size, weight, position) rather than a bigger dataset
+// that doesn't exist.
+interface PreviewCopy {
+  tier1: string;
+  tier2: string | null;
+  badge: string | null;
+}
+
+function buildPreviewCopy(visualSubject: string, offer: string, contentType: string): PreviewCopy {
+  const tier1 = (visualSubject || contentType).toUpperCase();
+  const contentTypeUpper = contentType.toUpperCase();
+  const tier2 = contentTypeUpper && contentTypeUpper !== tier1 ? contentTypeUpper : null;
+  const offerUpper = offer.toUpperCase();
+  const badge = offerUpper && offerUpper !== tier1 && offerUpper !== tier2 ? offerUpper : null;
+  return { tier1, tier2, badge };
+}
+
+// Each style renders a genuinely different MINIATURE SOCIAL-CREATIVE
+// COMPOSITION — real poster-scale typography with a headline/subtitle/
+// badge hierarchy and a layered, art-directed background, not a photo
+// with one small caption line. The composition (how much of the card is
+// photo vs. negative space, where the photo sits, whether the headline
+// is an overlay or a standalone badge/sticker) differs per style, which
+// is what actually reads as "different design direction" at a glance
+// rather than "different color filter." `imageUrl` is the one
+// shared-pool photo (still one search for the whole idea, unchanged) —
+// every style draws from the same photo, only the layout around it
+// differs. When there's no real subject, `imageUrl` is deliberately
+// undefined and every style falls back to its own layered CSS gradient
+// instead of a photo — a graphic promotional composition, not a random
+// stock object standing in for a subject that was never stated.
+function CleanPremiumPreview({ imageUrl, copy }: { imageUrl: string | undefined; copy: PreviewCopy }) {
+  return (
+    <div className="relative h-full w-full bg-white">
+      {imageUrl ? (
+        <img src={imageUrl} alt="" className="absolute inset-0 h-full w-full object-cover" loading="lazy" />
+      ) : (
+        <div
+          className="absolute inset-0"
+          style={{ background: "radial-gradient(circle at 30% 20%, #faf9f5, #e9e6dc 75%)" }}
+        />
+      )}
+      <div className="absolute inset-x-0 bottom-0 h-[58%] bg-gradient-to-t from-white via-white/90 to-transparent" />
+      <div className="absolute inset-x-1.5 bottom-1.5">
+        <p className="line-clamp-2 text-[9px] font-bold uppercase leading-[9px] tracking-tight text-black">
+          {copy.tier1}
         </p>
-      </>
-    ),
-  },
-  bold_energetic: {
-    imgFilter: "contrast(1.25) saturate(1.2)",
-    overlay: (headline) => (
-      <>
-        <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/25 to-transparent" />
-        <div className="absolute inset-x-1.5 bottom-1.5">
-          <div className="mb-0.5 h-[2px] w-4 bg-accent" />
-          <p className="line-clamp-2 text-[7.5px] font-extrabold uppercase leading-[8px] tracking-tight text-white">
-            {headline}
+        {copy.tier2 && (
+          <p className="mt-0.5 line-clamp-1 text-[5px] font-medium uppercase tracking-[0.14em] text-black/60">
+            {copy.tier2}
           </p>
-        </div>
-      </>
-    ),
-  },
-  warm_lifestyle: {
-    imgFilter: "sepia(0.25) saturate(1.15)",
-    overlay: (headline) => (
-      <>
-        <div className="absolute inset-x-0 bottom-0 h-2/5 bg-gradient-to-t from-[#3a2412]/70 to-transparent" />
-        <p className="absolute inset-x-1.5 bottom-1.5 line-clamp-2 text-[6.5px] font-medium leading-tight text-[#fdf3e7]">
-          {headline}
-        </p>
-      </>
-    ),
-  },
-  minimal_editorial: {
-    overlay: (headline) => (
-      <div className="absolute bottom-1.5 left-1.5 rounded-sm bg-white/90 px-1 py-0.5">
-        <p className="line-clamp-1 text-[6px] font-medium uppercase tracking-[0.15em] text-black/80">{headline}</p>
+        )}
+        {copy.badge && (
+          <span className="mt-1 inline-block rounded-full border border-black/25 px-1 py-0.5 text-[4.5px] font-semibold uppercase tracking-wide text-black/75">
+            {copy.badge}
+          </span>
+        )}
       </div>
-    ),
-  },
-  vibrant_playful: {
-    imgFilter: "saturate(1.5) contrast(1.05) brightness(1.05)",
-    overlay: (headline) => (
-      <>
-        <div className="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-black/55 to-transparent" />
-        <div className="absolute left-1.5 top-1.5 rounded-full bg-accent px-1.5 py-0.5">
-          <p className="text-[6px] font-bold uppercase text-accent-foreground">New</p>
-        </div>
-        <p className="absolute inset-x-1.5 bottom-1.5 line-clamp-2 text-[7px] font-bold leading-tight text-white">
-          {headline}
+    </div>
+  );
+}
+
+function BoldEnergeticPreview({ imageUrl, copy }: { imageUrl: string | undefined; copy: PreviewCopy }) {
+  return (
+    <div className="relative h-full w-full bg-black">
+      {imageUrl ? (
+        <img
+          src={imageUrl}
+          alt=""
+          className="absolute inset-0 h-full w-full object-cover opacity-80"
+          style={{ filter: "contrast(1.3) saturate(1.2)" }}
+          loading="lazy"
+        />
+      ) : (
+        <div className="absolute inset-0" style={{ background: "linear-gradient(150deg, #0d0d0d, #2a2a2a 60%, #1a0505)" }} />
+      )}
+      <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/35 to-black/10" />
+      <div className="absolute -left-2 top-0 h-4 w-16 origin-top-left -rotate-[18deg] bg-accent/90" />
+      <div className="absolute -left-2 top-3 h-1.5 w-14 origin-top-left -rotate-[18deg] bg-white/25" />
+      <div className="absolute inset-x-1 bottom-1">
+        <p className="line-clamp-2 text-[10px] font-black uppercase leading-[10px] tracking-tighter text-white">
+          {copy.tier1}
         </p>
-      </>
-    ),
-  },
+        {copy.badge && (
+          <span className="mt-1 inline-block rounded bg-white px-1 py-0.5 text-[5px] font-black uppercase tracking-tight text-black">
+            {copy.badge}
+          </span>
+        )}
+        {!copy.badge && copy.tier2 && (
+          <p className="mt-0.5 line-clamp-1 text-[5px] font-semibold uppercase tracking-wide text-white/70">
+            {copy.tier2}
+          </p>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function WarmLifestylePreview({ imageUrl, copy }: { imageUrl: string | undefined; copy: PreviewCopy }) {
+  return (
+    <div className="relative h-full w-full">
+      {imageUrl ? (
+        <img
+          src={imageUrl}
+          alt=""
+          className="h-full w-full object-cover"
+          style={{ filter: "sepia(0.25) saturate(1.15)" }}
+          loading="lazy"
+        />
+      ) : (
+        <div className="h-full w-full" style={{ background: "linear-gradient(165deg, #e6b87d, #b5793f 55%, #6e4423)" }} />
+      )}
+      <div className="absolute inset-x-0 bottom-0 h-3/5 bg-gradient-to-t from-[#2e1a0c]/85 via-[#2e1a0c]/35 to-transparent" />
+      <div className="absolute right-1.5 top-1.5 h-2.5 w-2.5 rounded-full border border-[#fdf3e7]/70" />
+      <div className="absolute inset-x-1.5 bottom-1.5">
+        <p className="font-display line-clamp-2 text-[9px] font-bold leading-[10px] text-[#fdf3e7]">{copy.tier1}</p>
+        {copy.badge ? (
+          <span className="mt-1 inline-block rounded-full bg-[#fdf3e7]/90 px-1.5 py-0.5 text-[4.5px] font-semibold uppercase tracking-wide text-[#5a3a1e]">
+            {copy.badge}
+          </span>
+        ) : (
+          copy.tier2 && <p className="mt-0.5 line-clamp-1 text-[5px] italic text-[#fdf3e7]/75">{copy.tier2}</p>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function MinimalEditorialPreview({ imageUrl, copy }: { imageUrl: string | undefined; copy: PreviewCopy }) {
+  return (
+    <div className="relative h-full w-full bg-[#f7f7f4]">
+      <div className="absolute right-1 top-1 h-[42%] w-[46%] overflow-hidden">
+        {imageUrl ? (
+          <img src={imageUrl} alt="" className="h-full w-full object-cover" loading="lazy" />
+        ) : (
+          <div className="h-full w-full" style={{ background: "linear-gradient(150deg, #eae8e1, #d2cfc4)" }} />
+        )}
+      </div>
+      <div className="absolute inset-x-1.5 bottom-1.5 max-w-[62%]">
+        <p className="line-clamp-2 text-[8px] font-semibold uppercase leading-[9px] tracking-tight text-black/85">
+          {copy.tier1}
+        </p>
+        {copy.tier2 && (
+          <p className="mt-0.5 line-clamp-1 text-[4.5px] font-normal uppercase tracking-[0.2em] text-black/45">
+            {copy.tier2}
+          </p>
+        )}
+        {copy.badge && (
+          <p className="mt-0.5 line-clamp-1 text-[4.5px] font-normal uppercase tracking-[0.2em] text-black/45">
+            {copy.badge}
+          </p>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function VibrantPlayfulPreview({ imageUrl, copy }: { imageUrl: string | undefined; copy: PreviewCopy }) {
+  return (
+    <div className="relative h-full w-full">
+      {imageUrl ? (
+        <img
+          src={imageUrl}
+          alt=""
+          className="h-full w-full object-cover"
+          style={{ filter: "saturate(1.5) contrast(1.05) brightness(1.05)" }}
+          loading="lazy"
+        />
+      ) : (
+        <div className="h-full w-full" style={{ background: "linear-gradient(150deg, #ff9466, #d946ef 55%, #9333ea)" }} />
+      )}
+      <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/5 to-transparent" />
+      <div className="absolute -right-1 top-2 h-3 w-3 rounded-full bg-white/30" />
+      <div className="absolute right-3 top-6 h-1.5 w-1.5 rounded-full bg-white/50" />
+      <div className="absolute inset-x-1.5 bottom-1.5">
+        <p className="line-clamp-2 text-[9.5px] font-extrabold uppercase leading-[10px] text-white">{copy.tier1}</p>
+        {copy.badge && (
+          <span className="mt-1 inline-block -rotate-3 rounded bg-accent px-1.5 py-0.5 text-[5px] font-extrabold uppercase text-accent-foreground shadow-sm">
+            {copy.badge}
+          </span>
+        )}
+      </div>
+    </div>
+  );
+}
+
+const STYLE_PREVIEWS: Record<string, (props: { imageUrl: string | undefined; copy: PreviewCopy }) => ReactNode> = {
+  clean_premium: CleanPremiumPreview,
+  bold_energetic: BoldEnergeticPreview,
+  warm_lifestyle: WarmLifestylePreview,
+  minimal_editorial: MinimalEditorialPreview,
+  vibrant_playful: VibrantPlayfulPreview,
 };
 
 function StylePreview({
   opt,
   previewUrl,
+  hasSubject,
   loading,
-  headline,
+  copy,
 }: {
   opt: VisualDirectionOption;
   previewUrl: string | undefined;
+  hasSubject: boolean;
   loading: boolean;
-  headline: string;
+  copy: PreviewCopy;
 }) {
-  const src = previewUrl ?? opt.fallbackImage;
-  const treatment = STYLE_TREATMENTS[opt.id] ?? STYLE_TREATMENTS.clean_premium;
+  const Preview = STYLE_PREVIEWS[opt.id] ?? CleanPremiumPreview;
+  // Only a real, idea-relevant photo is ever shown as the image — never
+  // the pool's own no-subject fallback search result, since that would
+  // still be "a random stock object" standing in for a subject that was
+  // never stated. No subject means every style renders its own layered
+  // graphic composition instead.
+  const imageUrl = hasSubject ? previewUrl : undefined;
   return (
     <div className="relative h-full w-full">
-      <img
-        src={src}
-        alt=""
-        className="h-full w-full object-cover"
-        style={treatment.imgFilter ? { filter: treatment.imgFilter } : undefined}
-        loading="lazy"
-      />
-      {/* The mini-creative overlay only appears once a genuine,
-          idea-relevant photo has loaded — showing a headline over the
-          unrelated static fallback would read as broken, not loading. */}
-      {previewUrl && treatment.overlay(headline)}
-      {loading && !previewUrl && <div className="absolute inset-0 animate-pulse bg-black/10" />}
+      <Preview imageUrl={imageUrl} copy={copy} />
+      {hasSubject && loading && !previewUrl && <div className="absolute inset-0 animate-pulse bg-black/10" />}
     </div>
   );
 }
@@ -197,11 +332,7 @@ export function VisualDirectionStep({
   const lastFetchedKeyRef = useRef<string | null>(null);
 
   const options = showMore ? ALL_DIRECTIONS : VISUAL_DIRECTIONS;
-  // The offer ("20% OFF") is the punchiest headline when present, then
-  // the real subject, then content_type — always GPT-derived, never
-  // guessed, and always non-empty (content_type itself always has a
-  // safe default — see _understand_idea).
-  const headline = (offer || visualSubject || contentType).toUpperCase();
+  const copy = buildPreviewCopy(visualSubject, offer, contentType);
 
   // One search per idea, covering every style (including the 2 behind
   // "Show more") — a fresh generation id invalidates any still-in-flight
@@ -258,7 +389,13 @@ export function VisualDirectionStep({
               style={!isSelected ? { boxShadow: "var(--shadow-card)" } : undefined}
             >
               <div className="h-24 w-20 shrink-0 overflow-hidden rounded-xl">
-                <StylePreview opt={opt} previewUrl={pickFromPool(pool, opt)} loading={loading} headline={headline} />
+                <StylePreview
+                  opt={opt}
+                  previewUrl={pickFromPool(pool, opt)}
+                  hasSubject={!!visualSubject}
+                  loading={loading}
+                  copy={copy}
+                />
               </div>
               <div className="min-w-0 flex-1">
                 <div className="mb-1 flex items-center gap-2">

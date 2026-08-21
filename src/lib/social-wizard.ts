@@ -10,9 +10,6 @@ export interface VisualDirectionOption {
   label: string;
   description: string;
   promptModifier: string;
-  // The static real-Punqle-output fallback shown while the Pexels search
-  // is in flight, or if it fails/returns nothing — never an empty box.
-  fallbackImage: string;
 }
 
 export const VISUAL_DIRECTIONS: VisualDirectionOption[] = [
@@ -21,21 +18,18 @@ export const VISUAL_DIRECTIONS: VisualDirectionOption[] = [
     label: "Clean & Premium",
     description: "Minimal composition, refined typography, polished imagery.",
     promptModifier: "in a clean, minimal, premium style — refined composition, polished professional lighting, understated elegance",
-    fallbackImage: "/showcase-ads/skincare.jpg",
   },
   {
     id: "bold_energetic",
     label: "Bold & Energetic",
     description: "Stronger typography, high contrast, attention-grabbing composition.",
     promptModifier: "in a bold, energetic style — high contrast, punchy composition, vivid colors, attention-grabbing",
-    fallbackImage: "/showcase-ads/fitness.jpg",
   },
   {
     id: "warm_lifestyle",
     label: "Warm & Lifestyle",
     description: "Natural imagery, human feel, softer editorial composition.",
     promptModifier: "in a warm, lifestyle style — natural light, human/editorial feel, soft and inviting composition",
-    fallbackImage: "/showcase-ads/home.jpg",
   },
 ];
 
@@ -47,14 +41,12 @@ export const MORE_VISUAL_DIRECTIONS: VisualDirectionOption[] = [
     label: "Minimal & Editorial",
     description: "Lots of negative space, magazine-style restraint.",
     promptModifier: "in a minimal, editorial style — generous negative space, magazine-style restraint, muted tones",
-    fallbackImage: "/showcase-ads/saas.jpg",
   },
   {
     id: "vibrant_playful" as VisualDirection,
     label: "Vibrant & Playful",
     description: "Bright colors, fun energy, casual composition.",
     promptModifier: "in a vibrant, playful style — bright saturated colors, fun casual energy, dynamic composition",
-    fallbackImage: "/showcase-ads/food.jpg",
   },
 ];
 
