@@ -3,6 +3,56 @@ import { useState } from "react";
 import type { VisualDirection } from "@/lib/api";
 import { MORE_VISUAL_DIRECTIONS, VISUAL_DIRECTIONS } from "@/lib/social-wizard";
 
+// Small abstract "mood" swatches — deliberately illustrative, not a real
+// generated photo. There's no single real image per style (the actual
+// output depends on the user's own idea), so an abstract composition is
+// the honest way to preview a *look* rather than implying a fixed result.
+// Pure CSS/inline SVG, zero new assets, zero generation cost.
+function StylePreview({ id }: { id: VisualDirection | string }) {
+  switch (id) {
+    case "clean_premium":
+      return (
+        <div className="relative h-full w-full" style={{ background: "linear-gradient(135deg, #f6f4f1, #e6e2db)" }}>
+          <div className="absolute left-1/2 top-1/2 h-8 w-8 -translate-x-1/2 -translate-y-1/2 rounded-full border border-black/15" />
+          <div className="absolute bottom-3 left-3 right-3 h-px bg-black/15" />
+        </div>
+      );
+    case "bold_energetic":
+      return (
+        <div className="relative h-full w-full overflow-hidden" style={{ background: "#111114" }}>
+          <div
+            className="absolute -left-4 -top-4 h-16 w-16 rotate-45"
+            style={{ background: "var(--color-accent)" }}
+          />
+        </div>
+      );
+    case "warm_lifestyle":
+      return (
+        <div className="relative h-full w-full" style={{ background: "linear-gradient(160deg, #f3ddc4, #e8b98f)" }}>
+          <div
+            className="absolute bottom-2 right-2 h-10 w-10 rounded-full opacity-60 blur-[2px]"
+            style={{ background: "#fff6ea" }}
+          />
+        </div>
+      );
+    case "minimal_editorial":
+      return (
+        <div className="relative h-full w-full bg-[#fafafa]">
+          <div className="absolute left-1/2 top-1/2 h-1.5 w-1.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-black/40" />
+        </div>
+      );
+    case "vibrant_playful":
+      return (
+        <div
+          className="h-full w-full"
+          style={{ background: "linear-gradient(135deg, #ffb37a, #ff8fa3 55%, #b98bff)" }}
+        />
+      );
+    default:
+      return <div className="h-full w-full bg-secondary" />;
+  }
+}
+
 // Step 2 — 3 AI-recommended style directions instead of browsing a huge
 // template library. "Recommended" is whichever direction the Understanding
 // step derived from the user's idea; "Show more styles" reveals 2 more for
@@ -37,12 +87,15 @@ export function VisualDirectionStep({
               key={opt.id}
               onClick={() => onSelect(opt.id)}
               className={[
-                "flex items-start justify-between gap-3 rounded-2xl border p-4 text-left transition-colors",
+                "flex items-center gap-4 rounded-2xl border p-3 text-left transition-colors",
                 isSelected ? "border-primary bg-primary/5" : "border-border bg-card",
               ].join(" ")}
               style={!isSelected ? { boxShadow: "var(--shadow-card)" } : undefined}
             >
-              <div>
+              <div className="h-16 w-16 shrink-0 overflow-hidden rounded-xl">
+                <StylePreview id={opt.id} />
+              </div>
+              <div className="min-w-0 flex-1">
                 <div className="mb-1 flex items-center gap-2">
                   <span className="text-sm font-semibold text-foreground">{opt.label}</span>
                   {isRecommended && (

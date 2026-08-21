@@ -18,13 +18,24 @@ import { compositeImage, type Box, type BrandKit, type EditOptions } from "@/lib
 import { findVisualDirection, PLATFORM_OPTIONS, type Platform } from "@/lib/social-wizard";
 import { GenerationProgress } from "./GenerationProgress";
 import { IdeaStep } from "./IdeaStep";
-import { PlatformStep } from "./PlatformStep";
 import { PostKit } from "./PostKit";
+import { ResultsGrid } from "./ResultsGrid";
+import { SetupStep } from "./SetupStep";
 import { UnderstandingStep } from "./UnderstandingStep";
 import { VisualDirectionStep } from "./VisualDirectionStep";
-import { VisualSourceStep } from "./VisualSourceStep";
+import { WizardProgress } from "./WizardProgress";
 
-type WizardStep = "idea" | "understanding" | "direction" | "source" | "platform" | "generating" | "result";
+type WizardStep = "idea" | "understanding" | "direction" | "setup" | "generating" | "results" | "result";
+
+// Maps the real step machine onto the 4 display stages the spec asks
+// for (① What do you want? → ② Choose a look → ③ Set it up → ④
+// Generate) — purely a UI label, doesn't change the step machine itself.
+const PROGRESS_STAGE: Partial<Record<WizardStep, 1 | 2 | 3 | 4>> = {
+  idea: 1,
+  understanding: 1,
+  direction: 2,
+  setup: 3,
+};
 
 const pause = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -107,7 +118,7 @@ export function SinglePostForm({
   }, [selectedCaptionIndex, captions]);
 
   useEffect(() => {
-    if (step !== "result" || !editedCaption) return;
+    if (step !== "result" || images.length === 0 || !editedCaption) return;
     const requestId = ++compositeRequestRef.current;
     compositeImage(images[selectedImageIndex], editedCaption, brandKit, editOptions)
       .then((url) => {
@@ -185,13 +196,18 @@ export function SinglePostForm({
 
       setSelectedCaptionIndex(0);
       setSelectedImageIndex(0);
-      setStep("result");
+      setStep(versions > 1 ? "results" : "result");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Couldn't generate your post.");
-      setStep("platform");
+      setStep("setup");
     } finally {
       setGenerating(false);
     }
+  };
+
+  const handleSelectResult = (index: number) => {
+    setSelectedImageIndex(index);
+    setStep("result");
   };
 
   const handleGenerateMoreImages = async () => {
@@ -276,6 +292,7 @@ export function SinglePostForm({
 
   const handleReset = () => {
     setStep("idea");
+    setGenerationStage(0);
     setDescription("");
     setUnderstanding(null);
     setVisualDirection("clean_premium");
@@ -302,11 +319,7 @@ export function SinglePostForm({
 
   return (
     <>
-      {outOfCredits && step !== "result" && (
-        <div className="mb-5 rounded-2xl border border-dashed border-accent/40 bg-accent/5 p-4 text-sm text-foreground">
-          You're out of credits. Upgrade to keep generating.
-        </div>
-      )}
+      {PROGRESS_STAGE[step] && <WizardProgress currentStage={PROGRESS_STAGE[step]!} />}
 
       {step === "idea" && (
         <IdeaStep value={description} onChange={setDescription} onContinue={() => setStep("understanding")} />
@@ -325,38 +338,35 @@ export function SinglePostForm({
           recommended={understanding.visual_direction}
           selected={visualDirection}
           onSelect={setVisualDirection}
-          onContinue={() => setStep("source")}
+          onContinue={() => setStep("setup")}
           onBack={() => setStep("understanding")}
         />
       )}
 
-      {step === "source" && (
-        <VisualSourceStep
+      {step === "setup" && (
+        <SetupStep
           file={file}
           previewUrl={previewUrl}
           useAiImage={useAiImage}
           onFileChange={handleFileChange}
           onUseAiImage={handleUseAiImage}
           onDescriptionOverride={setDescription}
-          onContinue={() => setStep("platform")}
-          onBack={() => setStep("direction")}
-        />
-      )}
-
-      {step === "platform" && (
-        <PlatformStep
           platform={platform}
           onPlatformChange={setPlatform}
           versions={versions}
           onVersionsChange={setVersions}
           credits={credits}
           onGenerate={handleGenerate}
-          onBack={() => setStep("source")}
+          onBack={() => setStep("direction")}
           error={error}
         />
       )}
 
       {step === "generating" && <GenerationProgress currentStage={generationStage} />}
+
+      {step === "results" && images.length > 0 && (
+        <ResultsGrid images={images} onSelect={handleSelectResult} />
+      )}
 
       {step === "result" && captions.length > 0 && images.length > 0 && (
         <PostKit

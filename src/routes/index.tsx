@@ -26,17 +26,19 @@ export const Route = createFileRoute("/")({
   }),
 });
 
-// Single Post and Video are the primary "Create" entry point — Weekly Plan
-// and Competitor Analysis are demoted to the sidebar's "More tools" section
-// (see Sidebar.tsx) rather than shown here, per the decision to keep the
-// core flow focused on ad creation rather than broader content planning.
+// Image Post and Video are the two formats inside the ✨ Social Content
+// creation category — Punqle's product architecture is 3 categories
+// (Social Content / Ad Creation / E-commerce, see Sidebar.tsx), only the
+// first of which is built. Weekly Plan and Competitor Analysis live in
+// the sidebar's own "Tools" group rather than here, since they aren't
+// part of that 3-category system.
 const CONTENT_TYPES: {
   tab: Tab;
   label: string;
   description: string;
   icon: typeof Megaphone;
 }[] = [
-  { tab: "single", label: "Single Post", description: "One ad, ready in seconds", icon: Megaphone },
+  { tab: "single", label: "Image Post", description: "One ad, ready in seconds", icon: Megaphone },
   { tab: "video", label: "Video", description: "A short video ad (10 credits)", icon: Video },
 ];
 
@@ -72,6 +74,10 @@ function HomeScreen() {
 
       {(tab === "single" || tab === "video") && (
         <>
+          <div className="mb-1 flex items-center gap-1.5">
+            <Sparkles className="h-3.5 w-3.5 text-accent" />
+            <span className="text-xs font-semibold uppercase tracking-wider text-accent">Social Content</span>
+          </div>
           <h1 className="font-display mb-3 text-lg font-extrabold text-foreground">
             Create Your Next Post
           </h1>

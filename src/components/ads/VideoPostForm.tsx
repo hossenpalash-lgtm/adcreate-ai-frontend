@@ -182,7 +182,7 @@ export function VideoPostForm({
   return (
     <>
       {credits !== null && credits < VIDEO_CREDIT_COST && (
-        <div className="mb-5 rounded-2xl border border-dashed border-accent/40 bg-accent/5 p-4 text-sm text-foreground">
+        <div className="mb-5 rounded-2xl border border-dashed border-border bg-secondary/60 p-4 text-sm text-foreground">
           Video needs {VIDEO_CREDIT_COST} credits — you have {credits}. Upgrade to keep generating.
         </div>
       )}
