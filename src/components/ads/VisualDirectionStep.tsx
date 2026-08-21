@@ -1,7 +1,7 @@
 import { ArrowLeft, ArrowRight, Check, ChevronDown } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { searchStockPhotos } from "@/lib/api";
-import type { VisualDirection } from "@/lib/api";
+import type { ApiStockPhotoResult, VisualDirection } from "@/lib/api";
 import {
   extractPreviewSubject,
   MORE_VISUAL_DIRECTIONS,
@@ -12,16 +12,26 @@ import {
 // Real mini social-creative previews, adapted to the user's own idea —
 // searches the existing free Pexels stock-photo proxy (/ads/stock-photos,
 // already used elsewhere in this app for the "stock photo" upload
-// option) with the idea's subject plus a short style-mood phrase, e.g.
-// "coffee beans minimal product photography" for Clean & Premium.
-// Deliberately NOT a live Gemini regeneration — that would mean 3 extra
-// PAID image-generation calls (and a 30-45s wait) every time anyone
-// reaches this step, including everyone who never finishes generating.
-// A real, idea-relevant stock photo is the honest, free, fast middle
-// ground: genuinely about the user's product where Pexels has a good
-// match, and each style's `fallbackImage` (a real, already-generated
-// Punqle post) covers the loading moment and any search that comes up
-// empty — never an empty box, never a fabricated result.
+// option) ONCE per idea, for the idea's subject alone (e.g. "coffee
+// beans"), then every style card picks a different photo from that SAME
+// result pool. One shared search — not one search per style — is what
+// guarantees all the cards stay about the same underlying concept; only
+// which photo differs. Deliberately NOT a live Gemini regeneration —
+// that would mean extra PAID image-generation calls (and a 30-45s wait)
+// every time anyone reaches this step, including everyone who never
+// finishes generating. Each style's `fallbackImage` (a real,
+// already-generated Punqle post) covers the loading moment and any
+// search that comes up empty — never an empty box, never a fabricated
+// result.
+const ALL_DIRECTIONS = [...VISUAL_DIRECTIONS, ...MORE_VISUAL_DIRECTIONS];
+
+function pickFromPool(pool: ApiStockPhotoResult[], opt: VisualDirectionOption): string | undefined {
+  if (pool.length === 0) return undefined;
+  const idx = ALL_DIRECTIONS.findIndex((d) => d.id === opt.id);
+  const spread = Math.floor((idx / ALL_DIRECTIONS.length) * pool.length);
+  return pool[Math.min(spread, pool.length - 1)]?.thumbnail_url;
+}
+
 function StylePreview({
   opt,
   previewUrl,
@@ -62,63 +72,40 @@ export function VisualDirectionStep({
   onBack: () => void;
 }) {
   const [showMore, setShowMore] = useState(false);
-  const [previewUrls, setPreviewUrls] = useState<Record<string, string>>({});
-  const [loadingIds, setLoadingIds] = useState<Set<string>>(new Set());
+  const [pool, setPool] = useState<ApiStockPhotoResult[]>([]);
+  const [loading, setLoading] = useState(false);
   const generationRef = useRef(0);
-  const fetchedIdsRef = useRef<Set<string>>(new Set());
-  // Guards against firing the same 3 searches twice for an unchanged
-  // idea — React can legitimately re-run an effect without its
-  // dependency actually changing (e.g. dev-mode double-invoke), and
-  // since the searches are real (if free) network calls, this keeps it
-  // to exactly one request per style per idea regardless.
+  // Guards against firing the same search twice for an unchanged idea —
+  // React can legitimately re-run an effect without its dependency
+  // actually changing (e.g. dev-mode double-invoke), and since the
+  // search is real (if free) network call, this keeps it to exactly one
+  // request per idea regardless.
   const lastFetchedIdeaRef = useRef<string | null>(null);
 
-  const options = showMore ? [...VISUAL_DIRECTIONS, ...MORE_VISUAL_DIRECTIONS] : VISUAL_DIRECTIONS;
+  const options = showMore ? ALL_DIRECTIONS : VISUAL_DIRECTIONS;
 
-  const fetchPreview = (opt: VisualDirectionOption, subject: string, generation: number) => {
-    if (fetchedIdsRef.current.has(opt.id)) return;
-    fetchedIdsRef.current.add(opt.id);
-    setLoadingIds((prev) => new Set(prev).add(opt.id));
-    searchStockPhotos(`${subject} ${opt.previewSearchSuffix}`)
-      .then((r) => {
-        if (generationRef.current !== generation) return;
-        const first = r.results[0];
-        if (first) setPreviewUrls((prev) => ({ ...prev, [opt.id]: first.thumbnail_url }));
-      })
-      .catch(() => {})
-      .finally(() => {
-        if (generationRef.current !== generation) return;
-        setLoadingIds((prev) => {
-          const next = new Set(prev);
-          next.delete(opt.id);
-          return next;
-        });
-      });
-  };
-
-  // Re-searches whenever the idea itself changes (e.g. the user goes back
-  // and edits it) — a fresh generation id invalidates any still-in-flight
-  // searches from the previous idea so a slow response can't overwrite a
+  // One search per idea, covering every style (including the 2 behind
+  // "Show more") — a fresh generation id invalidates any still-in-flight
+  // search from a previous idea so a slow response can't overwrite a
   // newer one.
   useEffect(() => {
     if (lastFetchedIdeaRef.current === ideaText) return;
     lastFetchedIdeaRef.current = ideaText;
     const generation = ++generationRef.current;
-    fetchedIdsRef.current = new Set();
-    setPreviewUrls({});
-    setLoadingIds(new Set());
+    setPool([]);
+    setLoading(true);
     const subject = extractPreviewSubject(ideaText);
-    VISUAL_DIRECTIONS.forEach((opt) => fetchPreview(opt, subject, generation));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    searchStockPhotos(subject)
+      .then((r) => {
+        if (generationRef.current !== generation) return;
+        setPool(r.results);
+      })
+      .catch(() => {})
+      .finally(() => {
+        if (generationRef.current !== generation) return;
+        setLoading(false);
+      });
   }, [ideaText]);
-
-  // The 2 "more styles" only search once actually revealed.
-  useEffect(() => {
-    if (!showMore) return;
-    const subject = extractPreviewSubject(ideaText);
-    MORE_VISUAL_DIRECTIONS.forEach((opt) => fetchPreview(opt, subject, generationRef.current));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [showMore]);
 
   return (
     <div className="flex flex-col items-center text-center">
@@ -140,7 +127,7 @@ export function VisualDirectionStep({
               style={!isSelected ? { boxShadow: "var(--shadow-card)" } : undefined}
             >
               <div className="h-24 w-20 shrink-0 overflow-hidden rounded-xl">
-                <StylePreview opt={opt} previewUrl={previewUrls[opt.id]} loading={loadingIds.has(opt.id)} />
+                <StylePreview opt={opt} previewUrl={pickFromPool(pool, opt)} loading={loading} />
               </div>
               <div className="min-w-0 flex-1">
                 <div className="mb-1 flex items-center gap-2">

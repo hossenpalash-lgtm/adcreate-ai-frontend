@@ -10,13 +10,6 @@ export interface VisualDirectionOption {
   label: string;
   description: string;
   promptModifier: string;
-  // A short style-mood phrase appended to the user's own idea text when
-  // searching Pexels for a Step 2 preview (see VisualDirectionStep.tsx) —
-  // reuses the existing free /ads/stock-photos search proxy, never a new
-  // AI image-generation call. Deliberately shorter/plainer than
-  // promptModifier (that one is written for Gemini; this one for a
-  // keyword-search engine, where extra prose just dilutes relevance).
-  previewSearchSuffix: string;
   // The static real-Punqle-output fallback shown while the Pexels search
   // is in flight, or if it fails/returns nothing — never an empty box.
   fallbackImage: string;
@@ -28,7 +21,6 @@ export const VISUAL_DIRECTIONS: VisualDirectionOption[] = [
     label: "Clean & Premium",
     description: "Minimal composition, refined typography, polished imagery.",
     promptModifier: "in a clean, minimal, premium style — refined composition, polished professional lighting, understated elegance",
-    previewSearchSuffix: "minimal product photography",
     fallbackImage: "/showcase-ads/skincare.jpg",
   },
   {
@@ -36,7 +28,6 @@ export const VISUAL_DIRECTIONS: VisualDirectionOption[] = [
     label: "Bold & Energetic",
     description: "Stronger typography, high contrast, attention-grabbing composition.",
     promptModifier: "in a bold, energetic style — high contrast, punchy composition, vivid colors, attention-grabbing",
-    previewSearchSuffix: "bold dramatic high contrast",
     fallbackImage: "/showcase-ads/fitness.jpg",
   },
   {
@@ -44,7 +35,6 @@ export const VISUAL_DIRECTIONS: VisualDirectionOption[] = [
     label: "Warm & Lifestyle",
     description: "Natural imagery, human feel, softer editorial composition.",
     promptModifier: "in a warm, lifestyle style — natural light, human/editorial feel, soft and inviting composition",
-    previewSearchSuffix: "warm lifestyle natural light",
     fallbackImage: "/showcase-ads/home.jpg",
   },
 ];
@@ -57,7 +47,6 @@ export const MORE_VISUAL_DIRECTIONS: VisualDirectionOption[] = [
     label: "Minimal & Editorial",
     description: "Lots of negative space, magazine-style restraint.",
     promptModifier: "in a minimal, editorial style — generous negative space, magazine-style restraint, muted tones",
-    previewSearchSuffix: "minimal editorial negative space",
     fallbackImage: "/showcase-ads/saas.jpg",
   },
   {
@@ -65,24 +54,52 @@ export const MORE_VISUAL_DIRECTIONS: VisualDirectionOption[] = [
     label: "Vibrant & Playful",
     description: "Bright colors, fun energy, casual composition.",
     promptModifier: "in a vibrant, playful style — bright saturated colors, fun casual energy, dynamic composition",
-    previewSearchSuffix: "vibrant colorful playful",
     fallbackImage: "/showcase-ads/food.jpg",
   },
 ];
 
-// Cheap heuristic, not real NLP — strips a handful of common filler
-// words/verbs so "Promote our new coffee beans" becomes a cleaner search
-// query ("coffee beans") without needing any AI call just to parse the
-// idea. Good enough for a stock-photo search, which already tolerates
-// noisy queries reasonably well; falls back to the raw idea text if
-// stripping leaves nothing.
+// Cheap heuristic, not real NLP — strips common sentence-scaffolding
+// words/verbs so a full idea/starter sentence ("Create a product launch
+// post for my business.") collapses down to just its subject ("product
+// launch") without any AI call. Good enough for a stock-photo search,
+// which already tolerates noisy queries reasonably well.
 const FILLER_WORDS =
-  /\b(promote|announce|introduce|share|showcase|advertise|highlight|celebrate|our|new|the|a|an|for|with|about|post|social|this|your|we|are|is)\b/gi;
+  /\b(create|promote|announce|introduce|share|showcase|advertise|highlight|celebrate|explaining|our|new|the|a|an|for|with|about|post|social|this|your|my|we|are|is)\b/gi;
+
+// Words that, once every scaffolding word above is gone, still don't name
+// a real subject — e.g. "Create a promotional post for my special offer."
+// reduces to just "special offer", which is a marketing concept, not
+// something to search a stock-photo library for. Searching that literal
+// noisy leftover text is what let unrelated people/artwork show up for
+// genuinely generic ideas.
+const GENERIC_MARKETING_WORDS = new Set([
+  "special", "offer", "offers", "sale", "discount", "promo", "promotional",
+  "deal", "deals", "business", "product", "products", "service", "services",
+  "shop", "store",
+]);
+
+// One consistent neutral concept used whenever the idea has no real
+// subject left — every style preview searches this SAME query in that
+// case, so all three still show the same underlying concept (a
+// generic promotional/offer scene) rather than each drifting toward
+// whatever unrelated photo best matches its own style keywords.
+const GENERIC_FALLBACK_SUBJECT = "special offer sale shopping";
 
 export function extractPreviewSubject(ideaText: string): string {
   const withoutChipPrefix = ideaText.replace(/^[A-Za-z ]+:\s*/, "");
-  const stripped = withoutChipPrefix.replace(FILLER_WORDS, " ").replace(/\s+/g, " ").trim();
-  return stripped || withoutChipPrefix.trim() || ideaText.trim();
+  // Hyphens count as word boundaries for the \b-based regex below, so
+  // "behind-the-scenes" would otherwise have just its middle "the"
+  // stripped out from between two now-stranded hyphens — normalize
+  // hyphens to spaces first so a hyphenated phrase strips as cleanly as
+  // a spaced one.
+  const normalized = withoutChipPrefix.replace(/-/g, " ");
+  const stripped = normalized.replace(FILLER_WORDS, " ").replace(/\s+/g, " ").trim();
+  const hasRealSubject = stripped
+    .toLowerCase()
+    .replace(/[^a-z\s]/g, " ")
+    .split(/\s+/)
+    .some((w) => w.length > 0 && !GENERIC_MARKETING_WORDS.has(w));
+  return hasRealSubject ? stripped : GENERIC_FALLBACK_SUBJECT;
 }
 
 export function findVisualDirection(id: VisualDirection | string): VisualDirectionOption {
