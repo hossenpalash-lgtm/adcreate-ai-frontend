@@ -140,17 +140,17 @@ function CleanPremiumPreview({ imageUrl, copy }: { imageUrl: string | undefined;
         />
       )}
       <div className="absolute inset-x-0 bottom-0 h-[62%] bg-gradient-to-t from-white via-white/85 to-transparent" />
-      <div className="absolute inset-x-3 bottom-3">
-        <p className="line-clamp-2 text-lg font-bold uppercase leading-[1.05] tracking-tight text-black sm:text-xl">
+      <div className="absolute inset-x-1.5 bottom-1.5">
+        <p className="line-clamp-2 text-[11px] font-bold uppercase leading-[1.1] tracking-tight text-black">
           {copy.tier1}
         </p>
         {copy.tier2 && (
-          <p className="mt-1 line-clamp-1 text-[10px] font-medium uppercase tracking-[0.16em] text-black/55">
+          <p className="mt-0.5 line-clamp-1 text-[6.5px] font-medium uppercase tracking-[0.14em] text-black/55">
             {copy.tier2}
           </p>
         )}
         {copy.badge && (
-          <span className="mt-2 inline-block rounded-full border border-black/25 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide text-black/80">
+          <span className="mt-1 inline-block rounded-full border border-black/25 px-1.5 py-0.5 text-[6px] font-semibold uppercase tracking-wide text-black/80">
             {copy.badge}
           </span>
         )}
@@ -174,19 +174,19 @@ function BoldEnergeticPreview({ imageUrl, copy }: { imageUrl: string | undefined
         <div className="absolute inset-0" style={{ background: "linear-gradient(150deg, #0d0d0d, #2a2a2a 60%, #1a0505)" }} />
       )}
       <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/35 to-black/10" />
-      <div className="absolute -right-6 -top-6 h-28 w-28 origin-center rotate-[24deg] bg-accent/80" />
-      <div className="absolute -right-10 top-6 h-14 w-36 origin-center rotate-[24deg] bg-white/10" />
-      <div className="absolute inset-x-3 bottom-3">
-        <p className="line-clamp-2 text-xl font-black uppercase leading-[1.02] tracking-tight text-white sm:text-2xl">
+      <div className="absolute -right-3 -top-3 h-14 w-14 origin-center rotate-[24deg] bg-accent/80" />
+      <div className="absolute -right-5 top-3 h-7 w-16 origin-center rotate-[24deg] bg-white/10" />
+      <div className="absolute inset-x-1.5 bottom-1.5">
+        <p className="line-clamp-2 text-xs font-black uppercase leading-[1.05] tracking-tight text-white">
           {copy.tier1}
         </p>
         {copy.tier2 && (
-          <p className="mt-1 line-clamp-1 text-[10px] font-semibold uppercase tracking-wide text-white/70">
+          <p className="mt-0.5 line-clamp-1 text-[6.5px] font-semibold uppercase tracking-wide text-white/70">
             {copy.tier2}
           </p>
         )}
         {copy.badge && (
-          <span className="mt-2 inline-block rounded bg-white px-2.5 py-1 text-[11px] font-black uppercase tracking-tight text-black">
+          <span className="mt-1 inline-block rounded bg-white px-1.5 py-0.5 text-[6.5px] font-black uppercase tracking-tight text-black">
             {copy.badge}
           </span>
         )}
@@ -215,14 +215,14 @@ function WarmLifestylePreview({ imageUrl, copy }: { imageUrl: string | undefined
         <div className="h-full w-full" style={{ background: "linear-gradient(165deg, #e6b87d, #b5793f 55%, #6e4423)" }} />
       )}
       <div className="absolute inset-x-0 bottom-0 h-3/5 bg-gradient-to-t from-[#2e1a0c]/85 via-[#2e1a0c]/30 to-transparent" />
-      <div className="absolute right-3 top-3 h-4 w-4 rounded-full border border-[#fdf3e7]/70" />
-      <div className="absolute inset-x-3 bottom-3">
-        <p className="font-display line-clamp-2 text-lg font-bold leading-[1.1] text-[#fdf3e7] sm:text-xl">
+      <div className="absolute right-1.5 top-1.5 h-2.5 w-2.5 rounded-full border border-[#fdf3e7]/70" />
+      <div className="absolute inset-x-1.5 bottom-1.5">
+        <p className="font-display line-clamp-2 text-[11px] font-bold leading-[1.15] text-[#fdf3e7]">
           {copy.tier1}
         </p>
-        {tier2Text && <p className="mt-1 line-clamp-1 text-[11px] italic text-[#fdf3e7]/85">{tier2Text}</p>}
+        {tier2Text && <p className="mt-0.5 line-clamp-1 text-[7px] italic text-[#fdf3e7]/85">{tier2Text}</p>}
         {copy.badge && (
-          <span className="mt-1.5 inline-block rounded-full bg-[#fdf3e7]/90 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide text-[#5a3a1e]">
+          <span className="mt-1 inline-block rounded-full bg-[#fdf3e7]/90 px-1.5 py-0.5 text-[6px] font-semibold uppercase tracking-wide text-[#5a3a1e]">
             {copy.badge}
           </span>
         )}
@@ -234,24 +234,24 @@ function WarmLifestylePreview({ imageUrl, copy }: { imageUrl: string | undefined
 function MinimalEditorialPreview({ imageUrl, copy }: { imageUrl: string | undefined; copy: PreviewCopy }) {
   return (
     <div className="relative h-full w-full bg-[#f7f7f4]">
-      <div className="absolute right-3 top-3 h-[48%] w-[34%] overflow-hidden">
+      <div className="absolute right-1.5 top-1.5 h-[46%] w-[36%] overflow-hidden">
         {imageUrl ? (
           <img src={imageUrl} alt="" className="h-full w-full object-cover" loading="lazy" />
         ) : (
           <div className="h-full w-full" style={{ background: "linear-gradient(150deg, #eae8e1, #d2cfc4)" }} />
         )}
       </div>
-      <div className="absolute inset-x-3 bottom-3 max-w-[64%]">
-        <p className="line-clamp-2 text-base font-semibold uppercase leading-[1.15] tracking-tight text-black/85 sm:text-lg">
+      <div className="absolute inset-x-1.5 bottom-1.5 max-w-[62%]">
+        <p className="line-clamp-2 text-[9px] font-semibold uppercase leading-[1.2] tracking-tight text-black/85">
           {copy.tier1}
         </p>
         {copy.tier2 && (
-          <p className="mt-1 line-clamp-1 text-[9px] font-normal uppercase tracking-[0.2em] text-black/45">
+          <p className="mt-0.5 line-clamp-1 text-[5.5px] font-normal uppercase tracking-[0.18em] text-black/45">
             {copy.tier2}
           </p>
         )}
         {copy.badge && (
-          <p className="mt-0.5 line-clamp-1 text-[9px] font-normal uppercase tracking-[0.2em] text-black/45">
+          <p className="line-clamp-1 text-[5.5px] font-normal uppercase tracking-[0.18em] text-black/45">
             {copy.badge}
           </p>
         )}
@@ -275,20 +275,19 @@ function VibrantPlayfulPreview({ imageUrl, copy }: { imageUrl: string | undefine
         <div className="h-full w-full" style={{ background: "linear-gradient(150deg, #ff9466, #d946ef 55%, #9333ea)" }} />
       )}
       <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/5 to-transparent" />
-      <div className="absolute right-4 top-3 h-5 w-5 rounded-full bg-white/25" />
-      <div className="absolute right-10 top-9 h-2.5 w-2.5 rounded-full bg-white/45" />
-      <div className="absolute right-20 top-4 h-1.5 w-1.5 rounded-full bg-white/60" />
-      <div className="absolute inset-x-3 bottom-3">
-        <p className="line-clamp-2 text-lg font-extrabold uppercase leading-[1.05] text-white sm:text-xl">
+      <div className="absolute right-2 top-1.5 h-2.5 w-2.5 rounded-full bg-white/25" />
+      <div className="absolute right-5 top-4 h-1.5 w-1.5 rounded-full bg-white/45" />
+      <div className="absolute inset-x-1.5 bottom-1.5">
+        <p className="line-clamp-2 text-[11px] font-extrabold uppercase leading-[1.1] text-white">
           {copy.tier1}
         </p>
         {copy.tier2 && (
-          <p className="mt-1 line-clamp-1 text-[10px] font-semibold uppercase tracking-wide text-white/80">
+          <p className="mt-0.5 line-clamp-1 text-[6.5px] font-semibold uppercase tracking-wide text-white/80">
             {copy.tier2}
           </p>
         )}
         {copy.badge && (
-          <span className="mt-1.5 inline-block -rotate-3 rounded bg-accent px-2.5 py-1 text-[11px] font-extrabold uppercase text-accent-foreground shadow-sm">
+          <span className="mt-1 inline-block -rotate-3 rounded bg-accent px-1.5 py-0.5 text-[6.5px] font-extrabold uppercase text-accent-foreground shadow-sm">
             {copy.badge}
           </span>
         )}
@@ -421,12 +420,12 @@ export function VisualDirectionStep({
               key={opt.id}
               onClick={() => onSelect(opt.id)}
               className={[
-                "overflow-hidden rounded-2xl border text-left transition-colors",
+                "flex items-center gap-3 rounded-2xl border p-3 text-left transition-colors",
                 isSelected ? "border-primary bg-primary/5" : "border-border bg-card",
               ].join(" ")}
               style={!isSelected ? { boxShadow: "var(--shadow-card)" } : undefined}
             >
-              <div className="aspect-[16/10] w-full overflow-hidden">
+              <div className="h-24 w-32 shrink-0 overflow-hidden rounded-xl">
                 <StylePreview
                   opt={opt}
                   previewUrl={pickFromPool(pool, opt)}
@@ -435,26 +434,24 @@ export function VisualDirectionStep({
                   copy={copy}
                 />
               </div>
-              <div className="flex items-start justify-between gap-3 p-3">
-                <div className="min-w-0 flex-1">
-                  <div className="mb-1 flex items-center gap-2">
-                    <span className="text-sm font-semibold text-foreground">{opt.label}</span>
-                    {isRecommended && (
-                      <span className="rounded-full bg-accent px-2 py-0.5 text-[10px] font-semibold text-accent-foreground">
-                        Recommended
-                      </span>
-                    )}
-                  </div>
-                  <p className="text-xs text-muted-foreground">{opt.description}</p>
+              <div className="min-w-0 flex-1">
+                <div className="mb-1 flex items-center gap-2">
+                  <span className="text-sm font-semibold text-foreground">{opt.label}</span>
+                  {isRecommended && (
+                    <span className="rounded-full bg-accent px-2 py-0.5 text-[10px] font-semibold text-accent-foreground">
+                      Recommended
+                    </span>
+                  )}
                 </div>
-                <div
-                  className={[
-                    "flex h-5 w-5 shrink-0 items-center justify-center rounded-full border",
-                    isSelected ? "border-primary bg-primary text-primary-foreground" : "border-input",
-                  ].join(" ")}
-                >
-                  {isSelected && <Check className="h-3 w-3" />}
-                </div>
+                <p className="text-xs text-muted-foreground">{opt.description}</p>
+              </div>
+              <div
+                className={[
+                  "flex h-5 w-5 shrink-0 items-center justify-center rounded-full border",
+                  isSelected ? "border-primary bg-primary text-primary-foreground" : "border-input",
+                ].join(" ")}
+              >
+                {isSelected && <Check className="h-3 w-3" />}
               </div>
             </button>
           );
