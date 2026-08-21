@@ -64,30 +64,52 @@ function pickFromPool(pool: ApiStockPhotoResult[], opt: VisualDirectionOption): 
   return pool[Math.min(spread, pool.length - 1)]?.thumbnail_url;
 }
 
-// Every field a preview can show is REAL, GPT-derived data — never
-// invented filler like a fake "30% OFF" or "Limited time only" that
-// wasn't in the user's idea. `tier1` (the big poster headline) is the
-// real subject when one exists, else the real content type; `tier2` (a
-// smaller line) is the real content type when it adds something tier1
-// doesn't already say; `badge` is the real offer/CTA phrase when one was
-// actually stated. A genuinely generic idea ends up with just tier1 —
-// that's correct, not a bug: there's honestly only one real thing to
-// say about it, so the fix is making that one line read as a real
-// poster headline (size, weight, position) rather than a bigger dataset
-// that doesn't exist.
+// `tier1` (the big poster headline) is always real: the actual subject
+// when one exists, else the real content type. `tier2`/`badge` are real
+// GPT-derived data (content type / stated offer) whenever they add
+// something tier1 doesn't already say — e.g. "20% off our new coffee
+// beans" genuinely has all three: COFFEE BEANS / SPECIAL OFFER / 20%
+// OFF. When the idea is promotional but states no concrete offer detail
+// ("Create a promotional post for my special offer"), tier2/badge fall
+// back to generic, evergreen promotional phrasing ("Limited time only" /
+// "Special offer") — template chrome showing what an offer post in this
+// style *could* say, the same way a template gallery shows placeholder
+// copy, never a specific invented number (a fake "30% off" would read as
+// a real, actionable claim about this business, which the generic
+// phrases don't). This fallback only fires when the content itself is
+// actually promotional (PROMO_CONTENT_TYPES) — an announcement or
+// educational post with no subject still correctly shows just tier1,
+// since "Limited time only" would be a genuine mismatch there, not
+// harmless flavor.
 interface PreviewCopy {
   tier1: string;
   tier2: string | null;
   badge: string | null;
+  // True when tier2 is the generic fallback, not real content-type data
+  // — lets a style swap in its own personality-appropriate wording
+  // (e.g. Warm & Lifestyle's softer "Just for you") without ever
+  // touching real data.
+  tier2IsGeneric: boolean;
+}
+
+const PROMO_CONTENT_TYPES = ["special offer", "sale", "discount", "promo", "promotion"];
+
+function isPromoContentType(contentType: string): boolean {
+  const lower = contentType.toLowerCase();
+  return PROMO_CONTENT_TYPES.some((p) => lower.includes(p));
 }
 
 function buildPreviewCopy(visualSubject: string, offer: string, contentType: string): PreviewCopy {
   const tier1 = (visualSubject || contentType).toUpperCase();
   const contentTypeUpper = contentType.toUpperCase();
-  const tier2 = contentTypeUpper && contentTypeUpper !== tier1 ? contentTypeUpper : null;
+  const realTier2 = contentTypeUpper && contentTypeUpper !== tier1 ? contentTypeUpper : null;
   const offerUpper = offer.toUpperCase();
-  const badge = offerUpper && offerUpper !== tier1 && offerUpper !== tier2 ? offerUpper : null;
-  return { tier1, tier2, badge };
+  const realBadge = offerUpper && offerUpper !== tier1 && offerUpper !== realTier2 ? offerUpper : null;
+
+  const promo = isPromoContentType(contentType);
+  const tier2 = realTier2 ?? (promo ? "LIMITED TIME ONLY" : null);
+  const badge = realBadge ?? (promo ? "SPECIAL OFFER" : null);
+  return { tier1, tier2, badge, tier2IsGeneric: !realTier2 };
 }
 
 // Each style renders a genuinely different MINIATURE SOCIAL-CREATIVE
@@ -158,15 +180,15 @@ function BoldEnergeticPreview({ imageUrl, copy }: { imageUrl: string | undefined
         <p className="line-clamp-2 text-xl font-black uppercase leading-[1.02] tracking-tight text-white sm:text-2xl">
           {copy.tier1}
         </p>
+        {copy.tier2 && (
+          <p className="mt-1 line-clamp-1 text-[10px] font-semibold uppercase tracking-wide text-white/70">
+            {copy.tier2}
+          </p>
+        )}
         {copy.badge && (
           <span className="mt-2 inline-block rounded bg-white px-2.5 py-1 text-[11px] font-black uppercase tracking-tight text-black">
             {copy.badge}
           </span>
-        )}
-        {!copy.badge && copy.tier2 && (
-          <p className="mt-1 line-clamp-1 text-[10px] font-semibold uppercase tracking-wide text-white/70">
-            {copy.tier2}
-          </p>
         )}
       </div>
     </div>
@@ -174,6 +196,11 @@ function BoldEnergeticPreview({ imageUrl, copy }: { imageUrl: string | undefined
 }
 
 function WarmLifestylePreview({ imageUrl, copy }: { imageUrl: string | undefined; copy: PreviewCopy }) {
+  // The one place a style swaps in its own personality wording — only
+  // for the generic fallback (never overriding real content-type data)
+  // — "Just for you" reads warmer than "Limited time only" and matches
+  // this style's softer, human tone.
+  const tier2Text = copy.tier2IsGeneric && copy.tier2 === "LIMITED TIME ONLY" ? "Just for you" : copy.tier2;
   return (
     <div className="relative h-full w-full">
       {imageUrl ? (
@@ -193,12 +220,11 @@ function WarmLifestylePreview({ imageUrl, copy }: { imageUrl: string | undefined
         <p className="font-display line-clamp-2 text-lg font-bold leading-[1.1] text-[#fdf3e7] sm:text-xl">
           {copy.tier1}
         </p>
-        {copy.badge ? (
-          <span className="mt-2 inline-block rounded-full bg-[#fdf3e7]/90 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide text-[#5a3a1e]">
+        {tier2Text && <p className="mt-1 line-clamp-1 text-[11px] italic text-[#fdf3e7]/85">{tier2Text}</p>}
+        {copy.badge && (
+          <span className="mt-1.5 inline-block rounded-full bg-[#fdf3e7]/90 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide text-[#5a3a1e]">
             {copy.badge}
           </span>
-        ) : (
-          copy.tier2 && <p className="mt-1 line-clamp-1 text-[11px] italic text-[#fdf3e7]/75">{copy.tier2}</p>
         )}
       </div>
     </div>
@@ -256,8 +282,13 @@ function VibrantPlayfulPreview({ imageUrl, copy }: { imageUrl: string | undefine
         <p className="line-clamp-2 text-lg font-extrabold uppercase leading-[1.05] text-white sm:text-xl">
           {copy.tier1}
         </p>
+        {copy.tier2 && (
+          <p className="mt-1 line-clamp-1 text-[10px] font-semibold uppercase tracking-wide text-white/80">
+            {copy.tier2}
+          </p>
+        )}
         {copy.badge && (
-          <span className="mt-2 inline-block -rotate-3 rounded bg-accent px-2.5 py-1 text-[11px] font-extrabold uppercase text-accent-foreground shadow-sm">
+          <span className="mt-1.5 inline-block -rotate-3 rounded bg-accent px-2.5 py-1 text-[11px] font-extrabold uppercase text-accent-foreground shadow-sm">
             {copy.badge}
           </span>
         )}
