@@ -1,31 +1,45 @@
 import { ArrowLeft, ArrowRight, Check, ChevronDown } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { searchStockPhotos } from "@/lib/api";
 import type { VisualDirection } from "@/lib/api";
-import { MORE_VISUAL_DIRECTIONS, VISUAL_DIRECTIONS } from "@/lib/social-wizard";
+import {
+  extractPreviewSubject,
+  MORE_VISUAL_DIRECTIONS,
+  VISUAL_DIRECTIONS,
+  type VisualDirectionOption,
+} from "@/lib/social-wizard";
 
-// Real mini social-creative previews — one genuine, already-generated
-// Punqle post per style (the same real assets used in the landing page's
-// "Real Ad Showcase" section: real /ads/generate output, real captions,
-// real "Made with Punqle" watermark). Deliberately NOT a live preview
-// regenerated from the user's own idea each visit — doing that for real
-// would mean 3 extra paid Gemini calls (and a 30-45s wait) every single
-// time someone reaches this step, including everyone who never finishes
-// generating, which is a real, unbounded cost this app has never taken
-// on anywhere else. A genuine example of the *style* is the honest,
-// zero-cost middle ground: it's real Punqle output, not a placeholder,
-// just not tied to whatever the visitor happens to type.
-const STYLE_PREVIEW_IMAGE: Record<string, string> = {
-  clean_premium: "/showcase-ads/skincare.jpg",
-  bold_energetic: "/showcase-ads/fitness.jpg",
-  warm_lifestyle: "/showcase-ads/home.jpg",
-  minimal_editorial: "/showcase-ads/saas.jpg",
-  vibrant_playful: "/showcase-ads/food.jpg",
-};
-
-function StylePreview({ id }: { id: VisualDirection | string }) {
-  const src = STYLE_PREVIEW_IMAGE[id];
-  if (!src) return <div className="h-full w-full bg-secondary" />;
-  return <img src={src} alt="" className="h-full w-full object-cover" loading="lazy" />;
+// Real mini social-creative previews, adapted to the user's own idea —
+// searches the existing free Pexels stock-photo proxy (/ads/stock-photos,
+// already used elsewhere in this app for the "stock photo" upload
+// option) with the idea's subject plus a short style-mood phrase, e.g.
+// "coffee beans minimal product photography" for Clean & Premium.
+// Deliberately NOT a live Gemini regeneration — that would mean 3 extra
+// PAID image-generation calls (and a 30-45s wait) every time anyone
+// reaches this step, including everyone who never finishes generating.
+// A real, idea-relevant stock photo is the honest, free, fast middle
+// ground: genuinely about the user's product where Pexels has a good
+// match, and each style's `fallbackImage` (a real, already-generated
+// Punqle post) covers the loading moment and any search that comes up
+// empty — never an empty box, never a fabricated result.
+function StylePreview({
+  opt,
+  previewUrl,
+  loading,
+}: {
+  opt: VisualDirectionOption;
+  previewUrl: string | undefined;
+  loading: boolean;
+}) {
+  const src = previewUrl ?? opt.fallbackImage;
+  return (
+    <div className="relative h-full w-full">
+      <img src={src} alt="" className="h-full w-full object-cover" loading="lazy" />
+      {loading && !previewUrl && (
+        <div className="absolute inset-0 animate-pulse bg-black/10" />
+      )}
+    </div>
+  );
 }
 
 // Step 2 — 3 AI-recommended style directions instead of browsing a huge
@@ -33,12 +47,14 @@ function StylePreview({ id }: { id: VisualDirection | string }) {
 // step derived from the user's idea; "Show more styles" reveals 2 more for
 // users who want a different look than the recommendation.
 export function VisualDirectionStep({
+  ideaText,
   recommended,
   selected,
   onSelect,
   onContinue,
   onBack,
 }: {
+  ideaText: string;
   recommended: VisualDirection;
   selected: VisualDirection;
   onSelect: (id: VisualDirection) => void;
@@ -46,7 +62,63 @@ export function VisualDirectionStep({
   onBack: () => void;
 }) {
   const [showMore, setShowMore] = useState(false);
+  const [previewUrls, setPreviewUrls] = useState<Record<string, string>>({});
+  const [loadingIds, setLoadingIds] = useState<Set<string>>(new Set());
+  const generationRef = useRef(0);
+  const fetchedIdsRef = useRef<Set<string>>(new Set());
+  // Guards against firing the same 3 searches twice for an unchanged
+  // idea — React can legitimately re-run an effect without its
+  // dependency actually changing (e.g. dev-mode double-invoke), and
+  // since the searches are real (if free) network calls, this keeps it
+  // to exactly one request per style per idea regardless.
+  const lastFetchedIdeaRef = useRef<string | null>(null);
+
   const options = showMore ? [...VISUAL_DIRECTIONS, ...MORE_VISUAL_DIRECTIONS] : VISUAL_DIRECTIONS;
+
+  const fetchPreview = (opt: VisualDirectionOption, subject: string, generation: number) => {
+    if (fetchedIdsRef.current.has(opt.id)) return;
+    fetchedIdsRef.current.add(opt.id);
+    setLoadingIds((prev) => new Set(prev).add(opt.id));
+    searchStockPhotos(`${subject} ${opt.previewSearchSuffix}`)
+      .then((r) => {
+        if (generationRef.current !== generation) return;
+        const first = r.results[0];
+        if (first) setPreviewUrls((prev) => ({ ...prev, [opt.id]: first.thumbnail_url }));
+      })
+      .catch(() => {})
+      .finally(() => {
+        if (generationRef.current !== generation) return;
+        setLoadingIds((prev) => {
+          const next = new Set(prev);
+          next.delete(opt.id);
+          return next;
+        });
+      });
+  };
+
+  // Re-searches whenever the idea itself changes (e.g. the user goes back
+  // and edits it) — a fresh generation id invalidates any still-in-flight
+  // searches from the previous idea so a slow response can't overwrite a
+  // newer one.
+  useEffect(() => {
+    if (lastFetchedIdeaRef.current === ideaText) return;
+    lastFetchedIdeaRef.current = ideaText;
+    const generation = ++generationRef.current;
+    fetchedIdsRef.current = new Set();
+    setPreviewUrls({});
+    setLoadingIds(new Set());
+    const subject = extractPreviewSubject(ideaText);
+    VISUAL_DIRECTIONS.forEach((opt) => fetchPreview(opt, subject, generation));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ideaText]);
+
+  // The 2 "more styles" only search once actually revealed.
+  useEffect(() => {
+    if (!showMore) return;
+    const subject = extractPreviewSubject(ideaText);
+    MORE_VISUAL_DIRECTIONS.forEach((opt) => fetchPreview(opt, subject, generationRef.current));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [showMore]);
 
   return (
     <div className="flex flex-col items-center text-center">
@@ -68,7 +140,7 @@ export function VisualDirectionStep({
               style={!isSelected ? { boxShadow: "var(--shadow-card)" } : undefined}
             >
               <div className="h-24 w-20 shrink-0 overflow-hidden rounded-xl">
-                <StylePreview id={opt.id} />
+                <StylePreview opt={opt} previewUrl={previewUrls[opt.id]} loading={loadingIds.has(opt.id)} />
               </div>
               <div className="min-w-0 flex-1">
                 <div className="mb-1 flex items-center gap-2">

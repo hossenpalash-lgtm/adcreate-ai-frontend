@@ -344,6 +344,7 @@ export function SinglePostForm({
 
       {step === "direction" && understanding && (
         <VisualDirectionStep
+          ideaText={description}
           recommended={understanding.visual_direction}
           selected={visualDirection}
           onSelect={setVisualDirection}
