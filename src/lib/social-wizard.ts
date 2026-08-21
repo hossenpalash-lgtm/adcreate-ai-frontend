@@ -63,8 +63,16 @@ export const MORE_VISUAL_DIRECTIONS: VisualDirectionOption[] = [
 // post for my business.") collapses down to just its subject ("product
 // launch") without any AI call. Good enough for a stock-photo search,
 // which already tolerates noisy queries reasonably well.
+// "book"/"schedule" are stripped as the common imperative CTA verb
+// ("Book a free consultation") — without this, "book" as a search term
+// pulls literal photos of books/reading, an unrelated-subject drift bug
+// in the same family as the generic-marketing-words one below, just
+// triggered by word ambiguity instead of a missing subject. A real
+// "book" business ("Promote our new book") is rarer than this CTA
+// pattern and still keeps its own follow-on noun (e.g. "novel", a
+// title) as the anchor, so this is an acceptable trade.
 const FILLER_WORDS =
-  /\b(create|promote|announce|introduce|share|showcase|advertise|highlight|celebrate|explaining|our|new|the|a|an|for|with|about|post|social|this|your|my|we|are|is)\b/gi;
+  /\b(create|promote|announce|introduce|share|showcase|advertise|highlight|celebrate|explaining|book|booking|schedule|scheduling|our|new|the|a|an|for|with|about|post|social|this|your|my|we|are|is)\b/gi;
 
 // Words that, once every scaffolding word above is gone, still don't name
 // a real subject — e.g. "Create a promotional post for my special offer."
@@ -100,6 +108,27 @@ export function extractPreviewSubject(ideaText: string): string {
     .split(/\s+/)
     .some((w) => w.length > 0 && !GENERIC_MARKETING_WORDS.has(w));
   return hasRealSubject ? stripped : GENERIC_FALLBACK_SUBJECT;
+}
+
+// A short, punchy promotional headline overlaid on each Step 2 mini
+// preview (see VisualDirectionStep.tsx) — derived the same lightweight,
+// no-AI-call way as extractPreviewSubject, so "20% off our new coffee
+// beans." becomes "20% OFF" and a genuinely generic idea gets the same
+// fixed "SPECIAL OFFER" headline its photo search already falls back to,
+// keeping the whole preview (photo + headline) about one consistent
+// concept rather than two independently-derived texts.
+export function extractPreviewHeadline(ideaText: string): string {
+  const pctMatch = ideaText.match(/(\d{1,3})\s?%/);
+  if (pctMatch) return `${pctMatch[1]}% OFF`;
+  const subject = extractPreviewSubject(ideaText);
+  if (subject === GENERIC_FALLBACK_SUBJECT) return "SPECIAL OFFER";
+  const words = subject
+    .replace(/[^a-zA-Z0-9\s]/g, " ")
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 3);
+  return (words.join(" ") || "YOUR OFFER").toUpperCase();
 }
 
 export function findVisualDirection(id: VisualDirection | string): VisualDirectionOption {

@@ -1,8 +1,10 @@
 import { ArrowLeft, ArrowRight, Check, ChevronDown } from "lucide-react";
+import type { ReactNode } from "react";
 import { useEffect, useRef, useState } from "react";
 import { searchStockPhotos } from "@/lib/api";
 import type { ApiStockPhotoResult, VisualDirection } from "@/lib/api";
 import {
+  extractPreviewHeadline,
   extractPreviewSubject,
   MORE_VISUAL_DIRECTIONS,
   VISUAL_DIRECTIONS,
@@ -32,22 +34,99 @@ function pickFromPool(pool: ApiStockPhotoResult[], opt: VisualDirectionOption): 
   return pool[Math.min(spread, pool.length - 1)]?.thumbnail_url;
 }
 
+// Turns the shared photo into a genuine mini social-creative per style —
+// a headline + style-specific typography/scrim/composition layered on
+// top via plain CSS, not a second round of AI generation or per-style
+// stock search (that's exactly the drift bug the search-pooling fix
+// solved). Deterministic and free: same photo pool feeds every style,
+// only the overlay treatment differs, so the cards read as "design
+// variations of one concept" rather than five unrelated images.
+const STYLE_TREATMENTS: Record<string, { imgFilter?: string; overlay: (headline: string) => ReactNode }> = {
+  clean_premium: {
+    overlay: (headline) => (
+      <>
+        <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-black/70 via-black/10 to-transparent" />
+        <p className="absolute inset-x-1.5 bottom-1.5 line-clamp-2 text-[6.5px] font-semibold uppercase leading-tight tracking-[0.12em] text-white/95">
+          {headline}
+        </p>
+      </>
+    ),
+  },
+  bold_energetic: {
+    imgFilter: "contrast(1.25) saturate(1.2)",
+    overlay: (headline) => (
+      <>
+        <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/25 to-transparent" />
+        <div className="absolute inset-x-1.5 bottom-1.5">
+          <div className="mb-0.5 h-[2px] w-4 bg-accent" />
+          <p className="line-clamp-2 text-[7.5px] font-extrabold uppercase leading-[8px] tracking-tight text-white">
+            {headline}
+          </p>
+        </div>
+      </>
+    ),
+  },
+  warm_lifestyle: {
+    imgFilter: "sepia(0.25) saturate(1.15)",
+    overlay: (headline) => (
+      <>
+        <div className="absolute inset-x-0 bottom-0 h-2/5 bg-gradient-to-t from-[#3a2412]/70 to-transparent" />
+        <p className="absolute inset-x-1.5 bottom-1.5 line-clamp-2 text-[6.5px] font-medium leading-tight text-[#fdf3e7]">
+          {headline}
+        </p>
+      </>
+    ),
+  },
+  minimal_editorial: {
+    overlay: (headline) => (
+      <div className="absolute bottom-1.5 left-1.5 rounded-sm bg-white/90 px-1 py-0.5">
+        <p className="line-clamp-1 text-[6px] font-medium uppercase tracking-[0.15em] text-black/80">{headline}</p>
+      </div>
+    ),
+  },
+  vibrant_playful: {
+    imgFilter: "saturate(1.5) contrast(1.05) brightness(1.05)",
+    overlay: (headline) => (
+      <>
+        <div className="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-black/55 to-transparent" />
+        <div className="absolute left-1.5 top-1.5 rounded-full bg-accent px-1.5 py-0.5">
+          <p className="text-[6px] font-bold uppercase text-accent-foreground">New</p>
+        </div>
+        <p className="absolute inset-x-1.5 bottom-1.5 line-clamp-2 text-[7px] font-bold leading-tight text-white">
+          {headline}
+        </p>
+      </>
+    ),
+  },
+};
+
 function StylePreview({
   opt,
   previewUrl,
   loading,
+  headline,
 }: {
   opt: VisualDirectionOption;
   previewUrl: string | undefined;
   loading: boolean;
+  headline: string;
 }) {
   const src = previewUrl ?? opt.fallbackImage;
+  const treatment = STYLE_TREATMENTS[opt.id] ?? STYLE_TREATMENTS.clean_premium;
   return (
     <div className="relative h-full w-full">
-      <img src={src} alt="" className="h-full w-full object-cover" loading="lazy" />
-      {loading && !previewUrl && (
-        <div className="absolute inset-0 animate-pulse bg-black/10" />
-      )}
+      <img
+        src={src}
+        alt=""
+        className="h-full w-full object-cover"
+        style={treatment.imgFilter ? { filter: treatment.imgFilter } : undefined}
+        loading="lazy"
+      />
+      {/* The mini-creative overlay only appears once a genuine,
+          idea-relevant photo has loaded — showing a headline over the
+          unrelated static fallback would read as broken, not loading. */}
+      {previewUrl && treatment.overlay(headline)}
+      {loading && !previewUrl && <div className="absolute inset-0 animate-pulse bg-black/10" />}
     </div>
   );
 }
@@ -83,6 +162,7 @@ export function VisualDirectionStep({
   const lastFetchedIdeaRef = useRef<string | null>(null);
 
   const options = showMore ? ALL_DIRECTIONS : VISUAL_DIRECTIONS;
+  const headline = extractPreviewHeadline(ideaText);
 
   // One search per idea, covering every style (including the 2 behind
   // "Show more") — a fresh generation id invalidates any still-in-flight
@@ -127,7 +207,7 @@ export function VisualDirectionStep({
               style={!isSelected ? { boxShadow: "var(--shadow-card)" } : undefined}
             >
               <div className="h-24 w-20 shrink-0 overflow-hidden rounded-xl">
-                <StylePreview opt={opt} previewUrl={pickFromPool(pool, opt)} loading={loading} />
+                <StylePreview opt={opt} previewUrl={pickFromPool(pool, opt)} loading={loading} headline={headline} />
               </div>
               <div className="min-w-0 flex-1">
                 <div className="mb-1 flex items-center gap-2">
