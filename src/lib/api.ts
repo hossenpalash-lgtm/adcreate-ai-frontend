@@ -372,6 +372,11 @@ export interface ApiUnderstandIdeaResponse {
   content_type: string;
   tone: string;
   visual_direction: VisualDirection;
+  // Real GPT-derived subject/offer extraction (empty string when the
+  // idea genuinely doesn't state one — never guessed) — drives the
+  // Step 2 style-preview image search. See VisualDirectionStep.tsx.
+  visual_subject: string;
+  offer: string;
   summary_sentence: string;
 }
 

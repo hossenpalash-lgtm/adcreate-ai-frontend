@@ -58,78 +58,16 @@ export const MORE_VISUAL_DIRECTIONS: VisualDirectionOption[] = [
   },
 ];
 
-// Cheap heuristic, not real NLP — strips common sentence-scaffolding
-// words/verbs so a full idea/starter sentence ("Create a product launch
-// post for my business.") collapses down to just its subject ("product
-// launch") without any AI call. Good enough for a stock-photo search,
-// which already tolerates noisy queries reasonably well.
-// "book"/"schedule" are stripped as the common imperative CTA verb
-// ("Book a free consultation") — without this, "book" as a search term
-// pulls literal photos of books/reading, an unrelated-subject drift bug
-// in the same family as the generic-marketing-words one below, just
-// triggered by word ambiguity instead of a missing subject. A real
-// "book" business ("Promote our new book") is rarer than this CTA
-// pattern and still keeps its own follow-on noun (e.g. "novel", a
-// title) as the anchor, so this is an acceptable trade.
-const FILLER_WORDS =
-  /\b(create|promote|announce|introduce|share|showcase|advertise|highlight|celebrate|explaining|book|booking|schedule|scheduling|our|new|the|a|an|for|with|about|post|social|this|your|my|we|are|is)\b/gi;
-
-// Words that, once every scaffolding word above is gone, still don't name
-// a real subject — e.g. "Create a promotional post for my special offer."
-// reduces to just "special offer", which is a marketing concept, not
-// something to search a stock-photo library for. Searching that literal
-// noisy leftover text is what let unrelated people/artwork show up for
-// genuinely generic ideas.
-const GENERIC_MARKETING_WORDS = new Set([
-  "special", "offer", "offers", "sale", "discount", "promo", "promotional",
-  "deal", "deals", "business", "product", "products", "service", "services",
-  "shop", "store",
-]);
-
-// One consistent neutral concept used whenever the idea has no real
-// subject left — every style preview searches this SAME query in that
-// case, so all three still show the same underlying concept (a
-// generic promotional/offer scene) rather than each drifting toward
-// whatever unrelated photo best matches its own style keywords.
-const GENERIC_FALLBACK_SUBJECT = "special offer sale shopping";
-
-export function extractPreviewSubject(ideaText: string): string {
-  const withoutChipPrefix = ideaText.replace(/^[A-Za-z ]+:\s*/, "");
-  // Hyphens count as word boundaries for the \b-based regex below, so
-  // "behind-the-scenes" would otherwise have just its middle "the"
-  // stripped out from between two now-stranded hyphens — normalize
-  // hyphens to spaces first so a hyphenated phrase strips as cleanly as
-  // a spaced one.
-  const normalized = withoutChipPrefix.replace(/-/g, " ");
-  const stripped = normalized.replace(FILLER_WORDS, " ").replace(/\s+/g, " ").trim();
-  const hasRealSubject = stripped
-    .toLowerCase()
-    .replace(/[^a-z\s]/g, " ")
-    .split(/\s+/)
-    .some((w) => w.length > 0 && !GENERIC_MARKETING_WORDS.has(w));
-  return hasRealSubject ? stripped : GENERIC_FALLBACK_SUBJECT;
-}
-
-// A short, punchy promotional headline overlaid on each Step 2 mini
-// preview (see VisualDirectionStep.tsx) — derived the same lightweight,
-// no-AI-call way as extractPreviewSubject, so "20% off our new coffee
-// beans." becomes "20% OFF" and a genuinely generic idea gets the same
-// fixed "SPECIAL OFFER" headline its photo search already falls back to,
-// keeping the whole preview (photo + headline) about one consistent
-// concept rather than two independently-derived texts.
-export function extractPreviewHeadline(ideaText: string): string {
-  const pctMatch = ideaText.match(/(\d{1,3})\s?%/);
-  if (pctMatch) return `${pctMatch[1]}% OFF`;
-  const subject = extractPreviewSubject(ideaText);
-  if (subject === GENERIC_FALLBACK_SUBJECT) return "SPECIAL OFFER";
-  const words = subject
-    .replace(/[^a-zA-Z0-9\s]/g, " ")
-    .trim()
-    .split(/\s+/)
-    .filter(Boolean)
-    .slice(0, 3);
-  return (words.join(" ") || "YOUR OFFER").toUpperCase();
-}
+// The Step 2 style-preview image search (VisualDirectionStep.tsx) is
+// driven by real GPT-derived `visual_subject`/`offer` fields from
+// /ads/understand-idea (see _understand_idea in main.py) — genuine
+// semantic extraction, not a client-side regex guess. This constant is
+// only the last-resort query for when the idea genuinely states no
+// concrete subject at all (both fields come back empty) — deliberately
+// abstract/non-specific so it can't be mistaken for "we think you sell
+// clothes/coffee/cars," which a plausible-sounding but invented fallback
+// query risks implying.
+export const NEUTRAL_FALLBACK_QUERY = "abstract minimal background texture";
 
 export function findVisualDirection(id: VisualDirection | string): VisualDirectionOption {
   return (

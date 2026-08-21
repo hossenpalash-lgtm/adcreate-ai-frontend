@@ -4,28 +4,57 @@ import { useEffect, useRef, useState } from "react";
 import { searchStockPhotos } from "@/lib/api";
 import type { ApiStockPhotoResult, VisualDirection } from "@/lib/api";
 import {
-  extractPreviewHeadline,
-  extractPreviewSubject,
   MORE_VISUAL_DIRECTIONS,
+  NEUTRAL_FALLBACK_QUERY,
   VISUAL_DIRECTIONS,
   type VisualDirectionOption,
 } from "@/lib/social-wizard";
 
-// Real mini social-creative previews, adapted to the user's own idea —
-// searches the existing free Pexels stock-photo proxy (/ads/stock-photos,
-// already used elsewhere in this app for the "stock photo" upload
-// option) ONCE per idea, for the idea's subject alone (e.g. "coffee
-// beans"), then every style card picks a different photo from that SAME
+// Real mini social-creative previews, semantically grounded in the
+// user's own idea — not a per-style keyword search. `visualSubject`/
+// `offer` come from the REAL GPT-derived understanding of the idea
+// (/ads/understand-idea, see _understand_idea in main.py) — genuine
+// subject/entity extraction, not a client-side regex guess, and
+// deliberately empty when the idea states no concrete subject rather
+// than inventing one. Whatever subject exists is searched ONCE
+// (/ads/stock-photos, the existing free Pexels proxy) for the whole
+// idea, then every style card picks a different photo from that SAME
 // result pool. One shared search — not one search per style — is what
 // guarantees all the cards stay about the same underlying concept; only
-// which photo differs. Deliberately NOT a live Gemini regeneration —
-// that would mean extra PAID image-generation calls (and a 30-45s wait)
-// every time anyone reaches this step, including everyone who never
-// finishes generating. Each style's `fallbackImage` (a real,
-// already-generated Punqle post) covers the loading moment and any
-// search that comes up empty — never an empty box, never a fabricated
-// result.
+// which photo (and which CSS style treatment) differs. Style keywords
+// are never part of the search query at all, so they can't out-rank or
+// replace the real subject the way a per-style "subject + mood" query
+// used to. Deliberately NOT a live Gemini regeneration — that would
+// mean extra PAID image-generation calls (and a 30-45s wait) every time
+// anyone reaches this step, including everyone who never finishes
+// generating. Each style's `fallbackImage` (a real, already-generated
+// Punqle post) covers the loading moment and any search that comes up
+// empty — never an empty box, never a fabricated result.
 const ALL_DIRECTIONS = [...VISUAL_DIRECTIONS, ...MORE_VISUAL_DIRECTIONS];
+
+// Pexels has no relevance/caption metadata we can score candidates
+// against (the proxy only returns id/thumbnail/full url/photographer —
+// see /ads/stock-photos in main.py), so a true per-candidate semantic
+// score isn't something this stack can honestly compute without adding
+// a new paid call. The real lever for relevance is upstream: getting a
+// verified, non-hallucinated subject INTO the query (see
+// visualSubject above) rather than trying to re-rank results after the
+// fact with no signal to rank by.
+async function fetchPoolWithFallback(subject: string, contentType: string): Promise<ApiStockPhotoResult[]> {
+  const primaryQuery = subject || NEUTRAL_FALLBACK_QUERY;
+  const primary = await searchStockPhotos(primaryQuery).catch(() => ({ results: [] }));
+  if (primary.results.length > 0) return primary.results;
+  // Broader-category retry — e.g. a subject too narrow/rare for Pexels
+  // to have direct matches for falls back to its first significant word,
+  // or the post's content type, before giving up to the static
+  // per-style fallback images entirely.
+  const broadTerm = subject.split(" ")[0] || contentType;
+  if (broadTerm && broadTerm.toLowerCase() !== primaryQuery.toLowerCase()) {
+    const broader = await searchStockPhotos(broadTerm).catch(() => ({ results: [] }));
+    if (broader.results.length > 0) return broader.results;
+  }
+  return [];
+}
 
 function pickFromPool(pool: ApiStockPhotoResult[], opt: VisualDirectionOption): string | undefined {
   if (pool.length === 0) return undefined;
@@ -136,14 +165,20 @@ function StylePreview({
 // step derived from the user's idea; "Show more styles" reveals 2 more for
 // users who want a different look than the recommendation.
 export function VisualDirectionStep({
-  ideaText,
+  visualSubject,
+  offer,
+  contentType,
   recommended,
   selected,
   onSelect,
   onContinue,
   onBack,
 }: {
-  ideaText: string;
+  // Real GPT-derived fields from /ads/understand-idea — visualSubject and
+  // offer are "" when the idea genuinely doesn't state one, never guessed.
+  visualSubject: string;
+  offer: string;
+  contentType: string;
   recommended: VisualDirection;
   selected: VisualDirection;
   onSelect: (id: VisualDirection) => void;
@@ -159,33 +194,49 @@ export function VisualDirectionStep({
   // actually changing (e.g. dev-mode double-invoke), and since the
   // search is real (if free) network call, this keeps it to exactly one
   // request per idea regardless.
-  const lastFetchedIdeaRef = useRef<string | null>(null);
+  const lastFetchedKeyRef = useRef<string | null>(null);
 
   const options = showMore ? ALL_DIRECTIONS : VISUAL_DIRECTIONS;
-  const headline = extractPreviewHeadline(ideaText);
+  // The offer ("20% OFF") is the punchiest headline when present, then
+  // the real subject, then content_type — always GPT-derived, never
+  // guessed, and always non-empty (content_type itself always has a
+  // safe default — see _understand_idea).
+  const headline = (offer || visualSubject || contentType).toUpperCase();
 
   // One search per idea, covering every style (including the 2 behind
   // "Show more") — a fresh generation id invalidates any still-in-flight
   // search from a previous idea so a slow response can't overwrite a
-  // newer one.
+  // newer one. Keyed on visualSubject (not the raw idea text) since
+  // that's what actually determines the query now.
   useEffect(() => {
-    if (lastFetchedIdeaRef.current === ideaText) return;
-    lastFetchedIdeaRef.current = ideaText;
+    const key = visualSubject;
+    if (lastFetchedKeyRef.current === key) return;
+    lastFetchedKeyRef.current = key;
     const generation = ++generationRef.current;
     setPool([]);
     setLoading(true);
-    const subject = extractPreviewSubject(ideaText);
-    searchStockPhotos(subject)
-      .then((r) => {
+    fetchPoolWithFallback(visualSubject, contentType)
+      .then((results) => {
         if (generationRef.current !== generation) return;
-        setPool(r.results);
+        setPool(results);
+        if (import.meta.env.DEV) {
+          // eslint-disable-next-line no-console
+          console.debug("[Step 2 preview]", {
+            visualSubject,
+            offer,
+            contentType,
+            searchQuery: visualSubject || NEUTRAL_FALLBACK_QUERY,
+            resultCount: results.length,
+            recommended,
+          });
+        }
       })
-      .catch(() => {})
       .finally(() => {
         if (generationRef.current !== generation) return;
         setLoading(false);
       });
-  }, [ideaText]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [visualSubject]);
 
   return (
     <div className="flex flex-col items-center text-center">
