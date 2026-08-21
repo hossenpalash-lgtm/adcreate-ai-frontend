@@ -1,7 +1,7 @@
 import { AlertCircle, ArrowRight, Check, ChevronDown, Loader2, Pencil, Shuffle, Sparkles } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { fetchIdeaLabsIdeas, understandIdea, type ApiUnderstandIdeaResponse } from "@/lib/api";
-import { IDEA_CHIPS } from "@/lib/social-wizard";
+import { IDEA_CHIPS, type IdeaChip } from "@/lib/social-wizard";
 
 // Step 1 — idea + the AI-understanding confirmation live on ONE screen now
 // (previously 2 separate step-screens) per the "one decision at a time,
@@ -33,11 +33,12 @@ export function IdeaStep({
   const requestRef = useRef(0);
 
   // Chip "selected" state is derived from the text itself (not separate
-  // component state) — this is what actually fixes the reported bug:
-  // clicking a chip strips any existing chip prefix before adding the new
-  // one, so at most one is ever present, and re-clicking the active chip
-  // cleanly removes it. No stale-state class of bugs possible.
-  const activeChip = IDEA_CHIPS.find((c) => value.startsWith(`${c}: `)) ?? null;
+  // component state) — this is what actually fixes the reported
+  // concatenation bug: a chip click fully replaces the textarea with its
+  // own starter sentence rather than prepending onto whatever was already
+  // there, so at most one chip's text is ever present, and re-clicking the
+  // active chip cleanly clears it. No stale-state class of bugs possible.
+  const activeChip = IDEA_CHIPS.find((c) => value.startsWith(c.starter)) ?? null;
 
   const runUnderstanding = (text: string) => {
     const requestId = ++requestRef.current;
@@ -75,9 +76,8 @@ export function IdeaStep({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [value]);
 
-  const handleChip = (chip: string) => {
-    const stripped = activeChip ? value.slice(`${activeChip}: `.length) : value;
-    onChange(activeChip === chip ? stripped : `${chip}: ${stripped}`);
+  const handleChip = (chip: IdeaChip) => {
+    onChange(activeChip?.label === chip.label ? "" : chip.starter);
   };
 
   const handleSurprise = async () => {
@@ -145,10 +145,10 @@ export function IdeaStep({
       {chipsExpanded && (
         <div className="mb-3 flex flex-wrap justify-center gap-2">
           {IDEA_CHIPS.map((chip) => {
-            const selected = activeChip === chip;
+            const selected = activeChip?.label === chip.label;
             return (
               <button
-                key={chip}
+                key={chip.label}
                 onClick={() => handleChip(chip)}
                 className={[
                   "flex items-center gap-1 rounded-full px-3.5 py-1.5 text-xs font-medium transition-colors",
@@ -156,7 +156,7 @@ export function IdeaStep({
                 ].join(" ")}
               >
                 {selected && <Check className="h-3 w-3" />}
-                {chip}
+                {chip.label}
               </button>
             );
           })}

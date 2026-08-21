@@ -91,17 +91,27 @@ export function findVisualDirection(id: VisualDirection | string): VisualDirecti
   );
 }
 
-// Quick-start chips on the idea step — plain client-side prefixes for the
-// idea textarea, not a new API. "Surprise me" is the one that actually
-// calls the backend (reuses the existing free /ads/idea-labs endpoint).
-export const IDEA_CHIPS = [
-  "Product launch",
-  "Special offer",
-  "Educational",
-  "Customer story",
-  "Behind the scenes",
-  "Announcement",
-] as const;
+// Quick-start chips on the idea step — client-side only, not a new API.
+// "Surprise me" is the one that actually calls the backend (reuses the
+// existing free /ads/idea-labs endpoint).
+export interface IdeaChip {
+  label: string;
+  // Clicking the chip populates the textarea with this natural-language
+  // starter SENTENCE (not the bare `label` as a "Label: " prefix — that
+  // read as an unfinished category tag rather than a usable prompt). The
+  // open-ended ones end mid-sentence with a trailing space so the cursor
+  // lands ready for the user to keep typing.
+  starter: string;
+}
+
+export const IDEA_CHIPS: IdeaChip[] = [
+  { label: "Product launch", starter: "Create a product launch post for my business." },
+  { label: "Special offer", starter: "Create a promotional post for my special offer." },
+  { label: "Educational", starter: "Create an educational post explaining " },
+  { label: "Customer story", starter: "Create a customer story post about " },
+  { label: "Behind the scenes", starter: "Create a behind-the-scenes post about " },
+  { label: "Announcement", starter: "Create an announcement post for my business." },
+];
 
 export type Platform = "instagram" | "facebook" | "linkedin" | "other";
 
