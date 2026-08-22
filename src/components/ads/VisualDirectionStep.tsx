@@ -115,46 +115,31 @@ async function fetchStylePhotos(baseQuery: string, styleIds: string[]): Promise<
 
 // `tier1` (the big poster headline) is always real: the actual subject
 // when one exists, else the real content type. `tier2`/`badge` are real
-// GPT-derived data (content type / stated offer) whenever they add
-// something tier1 doesn't already say — e.g. "20% off our new coffee
-// beans" genuinely has all three: COFFEE BEANS / SPECIAL OFFER / 20%
-// OFF. When the idea states no concrete subject/offer beyond its bare
-// content type, tier2 falls back to a fixed, safe supporting phrase for
-// that content type (SAFE_TAGLINE_BY_CONTENT_TYPE) — never an invented
-// fact or urgency claim. A content type with no entry there (including
-// "Special offer") shows tier1 alone: for Special Offer specifically, a
-// deal isn't inherently time-limited, so writing "Limited time only"
-// without the user ever saying so would be a fabricated claim, not
-// harmless template flavor. badge only ever shows real, user-stated
-// offer data — never a generic fallback — since a generic "Special
-// offer" badge would just duplicate tier1 when there's no real subject.
+// GPT-derived data (content type / stated offer) shown ONLY when they
+// add something tier1 doesn't already say — e.g. "20% off our new
+// coffee beans" genuinely has all three: COFFEE BEANS / SPECIAL OFFER /
+// 20% OFF. When the idea states no concrete subject/offer beyond its
+// bare content type, tier2/badge are simply absent — tier1 alone
+// (e.g. just "SPECIAL OFFER" or "BEHIND THE SCENES") is the complete,
+// honest label. An earlier round added a generic supporting-phrase
+// fallback here ("A look behind the work" etc.) but it was reverted:
+// at this thumbnail's compact size that second line frequently got cut
+// off mid-word, and it wasn't adding real information the label didn't
+// already carry — a short label alone reads cleaner than a truncated
+// subtitle.
 interface PreviewCopy {
   tier1: string;
   tier2: string | null;
   badge: string | null;
 }
 
-// Safe, non-inventing supporting phrases — describe the content TYPE
-// itself, never a specific unstated detail (no "checklist", no "office
-// team", no "client consultation", no fabricated urgency). Keyed by the
-// backend's content_type string, lowercased.
-const SAFE_TAGLINE_BY_CONTENT_TYPE: Record<string, string> = {
-  "product launch": "NOW AVAILABLE",
-  "educational tip": "QUICK & PRACTICAL",
-  "behind the scenes": "A LOOK BEHIND THE WORK",
-  "customer story": "REAL CUSTOMER EXPERIENCE",
-};
-
 function buildPreviewCopy(visualSubject: string, offer: string, contentType: string): PreviewCopy {
   const tier1 = (visualSubject || contentType).toUpperCase();
   const contentTypeUpper = contentType.toUpperCase();
-  const realTier2 = contentTypeUpper && contentTypeUpper !== tier1 ? contentTypeUpper : null;
+  const tier2 = contentTypeUpper && contentTypeUpper !== tier1 ? contentTypeUpper : null;
   const offerUpper = offer.toUpperCase();
-  const realBadge = offerUpper && offerUpper !== tier1 && offerUpper !== realTier2 ? offerUpper : null;
-
-  const genericTagline = SAFE_TAGLINE_BY_CONTENT_TYPE[contentType.toLowerCase().trim()] ?? null;
-  const tier2 = realTier2 ?? genericTagline;
-  return { tier1, tier2, badge: realBadge };
+  const badge = offerUpper && offerUpper !== tier1 && offerUpper !== tier2 ? offerUpper : null;
+  return { tier1, tier2, badge };
 }
 
 // Each style renders a genuinely different MINIATURE SOCIAL-CREATIVE
@@ -218,7 +203,11 @@ function CleanPremiumPreview({ imageUrl, copy }: { imageUrl: string | undefined;
 // (a genuine graphic shape, not a rotated rectangle peeking from a
 // corner), full-bleed high-contrast photo, and the headline pushed to
 // the largest scale of any style — the "obvious promotional energy"
-// this direction is supposed to have.
+// this direction is supposed to have. Deliberately just ONE accent
+// shape (an earlier version layered a second white sliver on top,
+// which read as crowded at this size alongside the photo and text) —
+// one clean diagonal reads as confidently bold, two overlapping ones
+// read as busy.
 function BoldEnergeticPreview({ imageUrl, copy }: { imageUrl: string | undefined; copy: PreviewCopy }) {
   return (
     <div className="relative h-full w-full overflow-hidden bg-black">
@@ -236,11 +225,7 @@ function BoldEnergeticPreview({ imageUrl, copy }: { imageUrl: string | undefined
       <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/25 to-black/40" />
       <div
         className="absolute inset-0 bg-accent"
-        style={{ clipPath: "polygon(55% 0%, 100% 0%, 100% 42%)" }}
-      />
-      <div
-        className="absolute inset-0 bg-white/25"
-        style={{ clipPath: "polygon(78% 0%, 100% 0%, 100% 20%)" }}
+        style={{ clipPath: "polygon(60% 0%, 100% 0%, 100% 38%)" }}
       />
       <div className="absolute inset-x-1.5 bottom-1.5">
         <p className="line-clamp-2 text-sm font-black uppercase leading-[0.95] tracking-tight text-white">
@@ -335,11 +320,11 @@ function MinimalEditorialPreview({ imageUrl, copy }: { imageUrl: string | undefi
   );
 }
 
-// Vibrant & Playful — layered rounded shapes (a soft blob, a solid dot,
-// a rotated square "confetti" chip) rather than two faint dots, and the
-// badge reads as a die-cut sticker (rotated, ring border, drop shadow)
-// instead of a plain rounded label — the "graphic elements that make it
-// feel social-first" this direction needs.
+// Vibrant & Playful — one soft rounded blob accent rather than three
+// layered shapes (an earlier version stacked a blob, a confetti chip,
+// and a ringed dot together, which crowded the corner alongside the
+// photo and text), and a plainer badge (no rotation/ring/shadow
+// stacked together) — still colorful and social-first, just not busy.
 function VibrantPlayfulPreview({ imageUrl, copy }: { imageUrl: string | undefined; copy: PreviewCopy }) {
   return (
     <div className="relative h-full w-full overflow-hidden">
@@ -355,9 +340,7 @@ function VibrantPlayfulPreview({ imageUrl, copy }: { imageUrl: string | undefine
         <div className="h-full w-full" style={{ background: "linear-gradient(150deg, #ff9466, #d946ef 55%, #9333ea)" }} />
       )}
       <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/5 to-transparent" />
-      <div className="absolute -right-4 -top-4 h-12 w-12 rounded-full bg-white/20" />
-      <div className="absolute right-6 top-2 h-2 w-2 rotate-45 bg-white/60" />
-      <div className="absolute right-2 top-7 h-2.5 w-2.5 rounded-full bg-accent ring-2 ring-white/50" />
+      <div className="absolute -right-4 -top-4 h-14 w-14 rounded-full bg-white/20" />
       <div className="absolute inset-x-1.5 bottom-1.5">
         <p className="line-clamp-2 text-[11px] font-extrabold uppercase leading-[1.1] text-white">
           {copy.tier1}
@@ -368,7 +351,7 @@ function VibrantPlayfulPreview({ imageUrl, copy }: { imageUrl: string | undefine
           </p>
         )}
         {copy.badge && (
-          <span className="mt-1 inline-block w-fit -rotate-3 rounded-md bg-accent px-1.5 py-0.5 text-[6.5px] font-extrabold uppercase text-accent-foreground shadow-md ring-2 ring-white/40">
+          <span className="mt-1 inline-block w-fit rounded-md bg-accent px-1.5 py-0.5 text-[6.5px] font-extrabold uppercase text-accent-foreground">
             {copy.badge}
           </span>
         )}
