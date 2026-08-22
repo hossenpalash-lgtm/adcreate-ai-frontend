@@ -5,26 +5,25 @@ import { searchStockPhotos } from "@/lib/api";
 import type { ApiStockPhotoResult, VisualDirection } from "@/lib/api";
 import {
   MORE_VISUAL_DIRECTIONS,
-  NEUTRAL_FALLBACK_QUERY,
   VISUAL_DIRECTIONS,
   type VisualDirectionOption,
 } from "@/lib/social-wizard";
 
 // Real mini social-creative previews, semantically grounded in the
-// user's own idea — not a per-style keyword search. `visualSubject`/
-// `offer` come from the REAL GPT-derived understanding of the idea
-// (/ads/understand-idea, see _understand_idea in main.py) — genuine
-// subject/entity extraction, not a client-side regex guess, and
-// deliberately empty when the idea states no concrete subject rather
-// than inventing one. Whatever subject exists is searched ONCE
-// (/ads/stock-photos, the existing free Pexels proxy) for the whole
-// idea, then every style card picks a different photo from that SAME
-// result pool. One shared search — not one search per style — is what
-// guarantees all the cards stay about the same underlying concept; only
-// which photo (and which mini-layout, see STYLE_PREVIEWS below) differs.
-// Style keywords are never part of the search query at all, so they
-// can't out-rank or replace the real subject the way a per-style
-// "subject + mood" query used to. Deliberately NOT a live Gemini
+// user's own idea. `visualSubject`/`offer` come from the REAL
+// GPT-derived understanding of the idea (/ads/understand-idea, see
+// _understand_idea in main.py) — genuine subject/entity extraction, not
+// a client-side regex guess, and deliberately empty when the idea
+// states no concrete subject rather than inventing one. Each style
+// card searches for its OWN style-appropriate photo (see
+// STYLE_QUERY_MODIFIER below) so the 5 cards look like genuinely
+// different photography, not 5 arbitrary draws from one generic pool —
+// but the real subject is always the anchor of that search, never
+// replaced by the style keyword: every per-style query is
+// "<subject> <mood words>", never the mood words alone, and if that
+// combination returns nothing, the style falls back to the bare
+// validated subject rather than drifting onto an unrelated photo (see
+// resolveBaseQuery/fetchStylePhotos). Deliberately NOT a live Gemini
 // regeneration — that would mean extra PAID image-generation calls (and
 // a 30-45s wait) every time anyone reaches this step, including everyone
 // who never finishes generating. When there's no real subject, every
@@ -32,6 +31,21 @@ import {
 // never an empty box, never a random stock object standing in for a
 // subject that was never stated.
 const ALL_DIRECTIONS = [...VISUAL_DIRECTIONS, ...MORE_VISUAL_DIRECTIONS];
+
+// Short, safe mood adjectives only — never a noun that could itself
+// become the photo's subject (the earlier per-style-search era's real
+// failure mode: a CTA verb like "book" or a vague noun like "special
+// offer" pulled photos of literal books/generic retail, unrelated to
+// the actual idea). An adjective pair can only narrow which "coffee
+// beans" photo comes back, never replace "coffee beans" with something
+// else entirely.
+const STYLE_QUERY_MODIFIER: Record<string, string> = {
+  clean_premium: "premium elegant",
+  bold_energetic: "bold vibrant",
+  warm_lifestyle: "warm cozy",
+  minimal_editorial: "minimal simple",
+  vibrant_playful: "colorful playful",
+};
 
 // Pexels has no relevance/caption metadata we can score candidates
 // against (the proxy only returns id/thumbnail/full url/photographer —
@@ -41,27 +55,56 @@ const ALL_DIRECTIONS = [...VISUAL_DIRECTIONS, ...MORE_VISUAL_DIRECTIONS];
 // verified, non-hallucinated subject INTO the query (see
 // visualSubject above) rather than trying to re-rank results after the
 // fact with no signal to rank by.
-async function fetchPoolWithFallback(subject: string, contentType: string): Promise<ApiStockPhotoResult[]> {
-  const primaryQuery = subject || NEUTRAL_FALLBACK_QUERY;
-  const primary = await searchStockPhotos(primaryQuery).catch(() => ({ results: [] }));
-  if (primary.results.length > 0) return primary.results;
-  // Broader-category retry — e.g. a subject too narrow/rare for Pexels
-  // to have direct matches for falls back to its first significant word,
-  // or the post's content type, before giving up to the static
-  // per-style fallback images entirely.
+//
+// Resolves ONE validated base query for the whole idea — broadening
+// (first significant word, then content type) only when the subject
+// itself returns zero Pexels results, same as before. This runs once
+// per idea rather than once per style, and every style's modifier
+// search below builds on top of whatever this returns — so a style
+// keyword can only ever narrow an already real, idea-relevant search,
+// never stand in on its own.
+async function resolveBaseQuery(subject: string, contentType: string): Promise<string | null> {
+  if (!subject) return null;
+  const primary = await searchStockPhotos(subject).catch(() => ({ results: [] }));
+  if (primary.results.length > 0) return subject;
   const broadTerm = subject.split(" ")[0] || contentType;
-  if (broadTerm && broadTerm.toLowerCase() !== primaryQuery.toLowerCase()) {
+  if (broadTerm && broadTerm.toLowerCase() !== subject.toLowerCase()) {
     const broader = await searchStockPhotos(broadTerm).catch(() => ({ results: [] }));
-    if (broader.results.length > 0) return broader.results;
+    if (broader.results.length > 0) return broadTerm;
   }
-  return [];
+  return null;
 }
 
-function pickFromPool(pool: ApiStockPhotoResult[], opt: VisualDirectionOption): string | undefined {
-  if (pool.length === 0) return undefined;
-  const idx = ALL_DIRECTIONS.findIndex((d) => d.id === opt.id);
-  const spread = Math.floor((idx / ALL_DIRECTIONS.length) * pool.length);
-  return pool[Math.min(spread, pool.length - 1)]?.thumbnail_url;
+// One search per style, in parallel: "<baseQuery> <style mood words>" —
+// the validated subject is always present, the style modifier only ever
+// rides alongside it. A style whose styled search comes back empty
+// falls back to a single shared bare-subject search (not its own extra
+// call) so every style still gets a real, on-topic photo even when
+// Pexels has nothing for "subject + mood". A light dedup pass across
+// the combined candidates keeps the 5 cards showing 5 different photos
+// rather than accidentally repeating one.
+async function fetchStylePhotos(baseQuery: string, styleIds: string[]): Promise<Record<string, string | undefined>> {
+  const styled = await Promise.all(
+    styleIds.map((id) => {
+      const modifier = STYLE_QUERY_MODIFIER[id] ?? "";
+      const query = modifier ? `${baseQuery} ${modifier}` : baseQuery;
+      return searchStockPhotos(query).catch(() => ({ results: [] }));
+    })
+  );
+  const needsFallback = styleIds.some((_, i) => styled[i].results.length === 0);
+  const fallback = needsFallback
+    ? await searchStockPhotos(baseQuery).catch(() => ({ results: [] }))
+    : { results: [] as ApiStockPhotoResult[] };
+
+  const used = new Set<string>();
+  const result: Record<string, string | undefined> = {};
+  styleIds.forEach((id, i) => {
+    const candidates = styled[i].results.length > 0 ? styled[i].results : fallback.results;
+    const pick = candidates.find((r) => !used.has(r.id)) ?? candidates[0];
+    if (pick) used.add(pick.id);
+    result[id] = pick?.thumbnail_url;
+  });
+  return result;
 }
 
 // `tier1` (the big poster headline) is always real: the actual subject
@@ -390,43 +433,48 @@ export function VisualDirectionStep({
   onBack: () => void;
 }) {
   const [showMore, setShowMore] = useState(false);
-  const [pool, setPool] = useState<ApiStockPhotoResult[]>([]);
+  const [photosByStyle, setPhotosByStyle] = useState<Record<string, string | undefined>>({});
   const [loading, setLoading] = useState(false);
   const generationRef = useRef(0);
   // Guards against firing the same search twice for an unchanged idea —
   // React can legitimately re-run an effect without its dependency
   // actually changing (e.g. dev-mode double-invoke), and since the
   // search is real (if free) network call, this keeps it to exactly one
-  // request per idea regardless.
+  // batch of requests per idea regardless.
   const lastFetchedKeyRef = useRef<string | null>(null);
 
   const options = showMore ? ALL_DIRECTIONS : VISUAL_DIRECTIONS;
   const copy = buildPreviewCopy(visualSubject, offer, contentType);
 
-  // One search per idea, covering every style (including the 2 behind
-  // "Show more") — a fresh generation id invalidates any still-in-flight
-  // search from a previous idea so a slow response can't overwrite a
-  // newer one. Keyed on visualSubject (not the raw idea text) since
-  // that's what actually determines the query now.
+  // One validated base query per idea, then one style-appropriate search
+  // per style (including the 2 behind "Show more") built on top of it —
+  // a fresh generation id invalidates any still-in-flight search from a
+  // previous idea so a slow response can't overwrite a newer one. Keyed
+  // on visualSubject (not the raw idea text) since that's what actually
+  // determines the query now.
   useEffect(() => {
     const key = visualSubject;
     if (lastFetchedKeyRef.current === key) return;
     lastFetchedKeyRef.current = key;
     const generation = ++generationRef.current;
-    setPool([]);
+    setPhotosByStyle({});
+    if (!visualSubject) return;
     setLoading(true);
-    fetchPoolWithFallback(visualSubject, contentType)
-      .then((results) => {
+    resolveBaseQuery(visualSubject, contentType)
+      .then((baseQuery) => {
+        if (generationRef.current !== generation || !baseQuery) return {} as Record<string, string | undefined>;
+        return fetchStylePhotos(baseQuery, ALL_DIRECTIONS.map((d) => d.id));
+      })
+      .then((photos) => {
         if (generationRef.current !== generation) return;
-        setPool(results);
+        setPhotosByStyle(photos);
         if (import.meta.env.DEV) {
           // eslint-disable-next-line no-console
           console.debug("[Step 2 preview]", {
             visualSubject,
             offer,
             contentType,
-            searchQuery: visualSubject || NEUTRAL_FALLBACK_QUERY,
-            resultCount: results.length,
+            photosByStyle: photos,
             recommended,
           });
         }
@@ -457,10 +505,10 @@ export function VisualDirectionStep({
               ].join(" ")}
               style={!isSelected ? { boxShadow: "var(--shadow-card)" } : undefined}
             >
-              <div className="h-24 w-32 shrink-0 overflow-hidden rounded-xl">
+              <div className="h-20 w-28 shrink-0 overflow-hidden rounded-xl">
                 <StylePreview
                   opt={opt}
-                  previewUrl={pickFromPool(pool, opt)}
+                  previewUrl={photosByStyle[opt.id]}
                   hasSubject={!!visualSubject}
                   loading={loading}
                   copy={copy}
