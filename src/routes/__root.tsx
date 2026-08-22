@@ -3,6 +3,7 @@ import {
   Outlet,
   createRootRouteWithContext,
   useRouter,
+  useRouterState,
   useNavigate,
   useSearch,
   HeadContent,
@@ -16,11 +17,18 @@ import { redeemReferral } from "../lib/api";
 import { Sentry } from "../lib/sentry";
 import { LoginScreen } from "../components/auth/LoginScreen";
 import { PunqleLogo } from "../components/PunqleLogo";
+import { LegalFooter } from "../components/LegalFooter";
 import { BillingPanel } from "../components/ads/BillingPanel";
 import { BrandKitPanel } from "../components/ads/BrandKitPanel";
 import { ProductCatalogPanel } from "../components/ads/ProductCatalogPanel";
 import { ReferralPanel } from "../components/ads/ReferralPanel";
 import { Sidebar, type NavTab } from "../components/Sidebar";
+
+// These render their own full page (header/footer, no sidebar) and must
+// stay reachable regardless of auth state — signed out, mid-splash, or
+// signed in — since Meta's own reviewers/crawlers and logged-out visitors
+// both need to load them directly.
+const PUBLIC_ROUTES = new Set(["/privacy-policy", "/terms", "/data-deletion"]);
 
 const PENDING_REFERRAL_KEY = "punqle_pending_ref";
 
@@ -126,6 +134,8 @@ function RootShell({ children }: { children: ReactNode }) {
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
+  const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const isPublicRoute = PUBLIC_ROUTES.has(pathname);
   // undefined = still checking for an existing session, null = signed out
   const [session, setSession] = useState<Session | null | undefined>(undefined);
   // The auth check usually resolves almost instantly (localStorage, not a
@@ -211,7 +221,13 @@ function RootComponent() {
   return (
     <QueryClientProvider client={queryClient}>
       <div className="flex min-h-screen w-full flex-col bg-background lg:flex-row">
-        {session === undefined || !minSplashDone ? (
+        {isPublicRoute ? (
+          // Bypasses the splash/login/sidebar gate entirely — these pages
+          // (LegalLayout) render their own full page and must load the
+          // same way whether the visitor is signed in, signed out, or a
+          // crawler with no session at all.
+          <Outlet />
+        ) : session === undefined || !minSplashDone ? (
           // Branded splash on app open — dark radial glow + logo reveal,
           // matching the reference "title card" transition energy but
           // with Punqle's own mark, not a literal copy of anyone else's
@@ -255,6 +271,7 @@ function RootComponent() {
             />
             <div className="mx-auto flex w-full max-w-md flex-1 flex-col lg:max-w-3xl">
               <Outlet />
+              <LegalFooter />
             </div>
             <BrandKitPanel open={brandKitOpen} onClose={() => setBrandKitOpen(false)} />
             <ProductCatalogPanel open={productCatalogOpen} onClose={() => setProductCatalogOpen(false)} />

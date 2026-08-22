@@ -16,6 +16,7 @@ import { useScrolled } from "@/lib/use-scrolled";
 import { AIToolMarquee } from "@/components/ToolMarquee";
 import { RealAdShowcase } from "@/components/auth/RealAdShowcase";
 import { PunqleLogo } from "@/components/PunqleLogo";
+import { LegalFooter } from "@/components/LegalFooter";
 import { WorkflowShowcase } from "@/components/auth/WorkflowShowcase";
 
 // Desktop-only floating photo cards around the login form — real
@@ -299,6 +300,9 @@ export function LoginScreen() {
       <p className="relative z-10 mt-10 text-center text-xs text-muted-foreground">
         Punqle is operated by HOSSEN, MD MOSHARRAF &middot; ABN 47 183 516 336
       </p>
+      <div className="relative z-10 w-full">
+        <LegalFooter />
+      </div>
     </main>
   );
 }
