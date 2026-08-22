@@ -128,29 +128,39 @@ function buildPreviewCopy(visualSubject: string, offer: string, contentType: str
 // own layered CSS gradient instead of a photo — a graphic promotional
 // composition, not a random stock object standing in for a subject that
 // was never stated.
+// Clean & Premium — a "photo window, then a real card" composition: the
+// image occupies only the top portion inside a thin frame, and the
+// caption sits on a genuinely SOLID white panel below it (not a
+// gradient fade over the photo, which is what Warm/Bold/Vibrant all do)
+// — the same "product shot up top, plain info block below" structure
+// real premium app-store/e-commerce creatives use. A thin rule above the
+// headline and a bordered (not filled) badge keep every accent
+// restrained rather than decorative.
 function CleanPremiumPreview({ imageUrl, copy }: { imageUrl: string | undefined; copy: PreviewCopy }) {
   return (
-    <div className="relative h-full w-full bg-white">
-      {imageUrl ? (
-        <img src={imageUrl} alt="" className="absolute inset-0 h-full w-full object-cover" loading="lazy" />
-      ) : (
-        <div
-          className="absolute inset-0"
-          style={{ background: "radial-gradient(circle at 28% 25%, #faf9f5, #e9e6dc 70%, #ded9cb 100%)" }}
-        />
-      )}
-      <div className="absolute inset-x-0 bottom-0 h-[62%] bg-gradient-to-t from-white via-white/85 to-transparent" />
-      <div className="absolute inset-x-1.5 bottom-1.5">
-        <p className="line-clamp-2 text-[11px] font-bold uppercase leading-[1.1] tracking-tight text-black">
+    <div className="relative flex h-full w-full flex-col bg-white p-1">
+      <div className="relative min-h-0 flex-[1.3] overflow-hidden">
+        {imageUrl ? (
+          <img src={imageUrl} alt="" className="h-full w-full object-cover" loading="lazy" />
+        ) : (
+          <div
+            className="h-full w-full"
+            style={{ background: "radial-gradient(circle at 30% 30%, #faf9f5, #e5e1d5 100%)" }}
+          />
+        )}
+      </div>
+      <div className="flex min-h-0 flex-1 flex-col justify-center px-1 pt-1">
+        <div className="mb-0.5 h-px w-4 bg-black/25" />
+        <p className="line-clamp-2 text-[10px] font-bold uppercase leading-[1.05] tracking-tight text-black">
           {copy.tier1}
         </p>
         {copy.tier2 && (
-          <p className="mt-0.5 line-clamp-1 text-[6.5px] font-medium uppercase tracking-[0.14em] text-black/55">
+          <p className="line-clamp-1 text-[6px] font-medium uppercase tracking-[0.14em] text-black/50">
             {copy.tier2}
           </p>
         )}
         {copy.badge && (
-          <span className="mt-1 inline-block rounded-full border border-black/25 px-1.5 py-0.5 text-[6px] font-semibold uppercase tracking-wide text-black/80">
+          <span className="mt-0.5 inline-block w-fit rounded-full border border-black/25 px-1.5 py-0.5 text-[5.5px] font-semibold uppercase tracking-wide text-black/75">
             {copy.badge}
           </span>
         )}
@@ -159,29 +169,40 @@ function CleanPremiumPreview({ imageUrl, copy }: { imageUrl: string | undefined;
   );
 }
 
+// Bold & Energetic — a real diagonal color block cut with `clip-path`
+// (a genuine graphic shape, not a rotated rectangle peeking from a
+// corner), full-bleed high-contrast photo, and the headline pushed to
+// the largest scale of any style — the "obvious promotional energy"
+// this direction is supposed to have.
 function BoldEnergeticPreview({ imageUrl, copy }: { imageUrl: string | undefined; copy: PreviewCopy }) {
   return (
-    <div className="relative h-full w-full bg-black">
+    <div className="relative h-full w-full overflow-hidden bg-black">
       {imageUrl ? (
         <img
           src={imageUrl}
           alt=""
-          className="absolute inset-0 h-full w-full object-cover opacity-80"
-          style={{ filter: "contrast(1.3) saturate(1.2)" }}
+          className="absolute inset-0 h-full w-full object-cover opacity-75"
+          style={{ filter: "contrast(1.35) saturate(1.25)" }}
           loading="lazy"
         />
       ) : (
         <div className="absolute inset-0" style={{ background: "linear-gradient(150deg, #0d0d0d, #2a2a2a 60%, #1a0505)" }} />
       )}
-      <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/35 to-black/10" />
-      <div className="absolute -right-3 -top-3 h-14 w-14 origin-center rotate-[24deg] bg-accent/80" />
-      <div className="absolute -right-5 top-3 h-7 w-16 origin-center rotate-[24deg] bg-white/10" />
+      <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/25 to-black/40" />
+      <div
+        className="absolute inset-0 bg-accent"
+        style={{ clipPath: "polygon(55% 0%, 100% 0%, 100% 42%)" }}
+      />
+      <div
+        className="absolute inset-0 bg-white/25"
+        style={{ clipPath: "polygon(78% 0%, 100% 0%, 100% 20%)" }}
+      />
       <div className="absolute inset-x-1.5 bottom-1.5">
-        <p className="line-clamp-2 text-xs font-black uppercase leading-[1.05] tracking-tight text-white">
+        <p className="line-clamp-2 text-sm font-black uppercase leading-[0.95] tracking-tight text-white">
           {copy.tier1}
         </p>
         {copy.tier2 && (
-          <p className="mt-0.5 line-clamp-1 text-[6.5px] font-semibold uppercase tracking-wide text-white/70">
+          <p className="mt-0.5 line-clamp-1 text-[6px] font-semibold uppercase tracking-wide text-white/70">
             {copy.tier2}
           </p>
         )}
@@ -195,6 +216,11 @@ function BoldEnergeticPreview({ imageUrl, copy }: { imageUrl: string | undefined
   );
 }
 
+// Warm & Lifestyle — a soft radial vignette (dark at the edges, clear in
+// the middle) stands in for "natural light falling on the frame" rather
+// than a flat corner accent, and the caption reads as a real editorial
+// caption block (serif headline, italic support line) sitting low and
+// centered the way a magazine photo credit/caption does.
 function WarmLifestylePreview({ imageUrl, copy }: { imageUrl: string | undefined; copy: PreviewCopy }) {
   // The one place a style swaps in its own personality wording — only
   // for the generic fallback (never overriding real content-type data)
@@ -202,7 +228,7 @@ function WarmLifestylePreview({ imageUrl, copy }: { imageUrl: string | undefined
   // this style's softer, human tone.
   const tier2Text = copy.tier2IsGeneric && copy.tier2 === "LIMITED TIME ONLY" ? "Just for you" : copy.tier2;
   return (
-    <div className="relative h-full w-full">
+    <div className="relative h-full w-full overflow-hidden">
       {imageUrl ? (
         <img
           src={imageUrl}
@@ -214,15 +240,18 @@ function WarmLifestylePreview({ imageUrl, copy }: { imageUrl: string | undefined
       ) : (
         <div className="h-full w-full" style={{ background: "linear-gradient(165deg, #e6b87d, #b5793f 55%, #6e4423)" }} />
       )}
-      <div className="absolute inset-x-0 bottom-0 h-3/5 bg-gradient-to-t from-[#2e1a0c]/85 via-[#2e1a0c]/30 to-transparent" />
-      <div className="absolute right-1.5 top-1.5 h-2.5 w-2.5 rounded-full border border-[#fdf3e7]/70" />
-      <div className="absolute inset-x-1.5 bottom-1.5">
-        <p className="font-display line-clamp-2 text-[11px] font-bold leading-[1.15] text-[#fdf3e7]">
+      <div
+        className="absolute inset-0"
+        style={{ background: "radial-gradient(ellipse at 50% 40%, transparent 35%, rgba(46,26,12,0.55) 100%)" }}
+      />
+      <div className="absolute inset-x-0 bottom-0 h-2/5 bg-gradient-to-t from-[#2e1a0c]/80 to-transparent" />
+      <div className="absolute inset-x-0 bottom-1.5 flex flex-col items-center text-center">
+        <p className="font-display line-clamp-2 max-w-[90%] text-[10px] font-bold leading-[1.15] text-[#fdf3e7]">
           {copy.tier1}
         </p>
-        {tier2Text && <p className="mt-0.5 line-clamp-1 text-[7px] italic text-[#fdf3e7]/85">{tier2Text}</p>}
+        {tier2Text && <p className="line-clamp-1 text-[6.5px] italic text-[#fdf3e7]/85">{tier2Text}</p>}
         {copy.badge && (
-          <span className="mt-1 inline-block rounded-full bg-[#fdf3e7]/90 px-1.5 py-0.5 text-[6px] font-semibold uppercase tracking-wide text-[#5a3a1e]">
+          <span className="mt-1 inline-block w-fit rounded-full bg-[#fdf3e7]/90 px-1.5 py-0.5 text-[5.5px] font-semibold uppercase tracking-wide text-[#5a3a1e]">
             {copy.badge}
           </span>
         )}
@@ -231,27 +260,33 @@ function WarmLifestylePreview({ imageUrl, copy }: { imageUrl: string | undefined
   );
 }
 
+// Minimal & Editorial — a genuine two-column magazine-spread split
+// (image confined to a fixed vertical strip, caption in its own column
+// with generous unused space above it) instead of a photo with an
+// overlay — the negative space is a real structural choice here, not
+// leftover space around a caption.
 function MinimalEditorialPreview({ imageUrl, copy }: { imageUrl: string | undefined; copy: PreviewCopy }) {
   return (
-    <div className="relative h-full w-full bg-[#f7f7f4]">
-      <div className="absolute right-1.5 top-1.5 h-[46%] w-[36%] overflow-hidden">
+    <div className="flex h-full w-full bg-[#f7f7f4]">
+      <div className="h-full w-[38%] shrink-0 overflow-hidden">
         {imageUrl ? (
           <img src={imageUrl} alt="" className="h-full w-full object-cover" loading="lazy" />
         ) : (
-          <div className="h-full w-full" style={{ background: "linear-gradient(150deg, #eae8e1, #d2cfc4)" }} />
+          <div className="h-full w-full" style={{ background: "linear-gradient(165deg, #eae8e1, #cecbc2)" }} />
         )}
       </div>
-      <div className="absolute inset-x-1.5 bottom-1.5 max-w-[62%]">
-        <p className="line-clamp-2 text-[9px] font-semibold uppercase leading-[1.2] tracking-tight text-black/85">
+      <div className="flex min-w-0 flex-1 flex-col justify-end p-1.5">
+        <div className="mb-1 h-px w-3 bg-black/20" />
+        <p className="line-clamp-3 text-[8px] font-semibold uppercase leading-[1.3] tracking-tight text-black/85">
           {copy.tier1}
         </p>
         {copy.tier2 && (
-          <p className="mt-0.5 line-clamp-1 text-[5.5px] font-normal uppercase tracking-[0.18em] text-black/45">
+          <p className="mt-0.5 line-clamp-1 text-[5px] font-normal uppercase tracking-[0.2em] text-black/45">
             {copy.tier2}
           </p>
         )}
         {copy.badge && (
-          <p className="line-clamp-1 text-[5.5px] font-normal uppercase tracking-[0.18em] text-black/45">
+          <p className="line-clamp-1 text-[5px] font-normal uppercase tracking-[0.2em] text-black/45">
             {copy.badge}
           </p>
         )}
@@ -260,9 +295,14 @@ function MinimalEditorialPreview({ imageUrl, copy }: { imageUrl: string | undefi
   );
 }
 
+// Vibrant & Playful — layered rounded shapes (a soft blob, a solid dot,
+// a rotated square "confetti" chip) rather than two faint dots, and the
+// badge reads as a die-cut sticker (rotated, ring border, drop shadow)
+// instead of a plain rounded label — the "graphic elements that make it
+// feel social-first" this direction needs.
 function VibrantPlayfulPreview({ imageUrl, copy }: { imageUrl: string | undefined; copy: PreviewCopy }) {
   return (
-    <div className="relative h-full w-full">
+    <div className="relative h-full w-full overflow-hidden">
       {imageUrl ? (
         <img
           src={imageUrl}
@@ -275,8 +315,9 @@ function VibrantPlayfulPreview({ imageUrl, copy }: { imageUrl: string | undefine
         <div className="h-full w-full" style={{ background: "linear-gradient(150deg, #ff9466, #d946ef 55%, #9333ea)" }} />
       )}
       <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/5 to-transparent" />
-      <div className="absolute right-2 top-1.5 h-2.5 w-2.5 rounded-full bg-white/25" />
-      <div className="absolute right-5 top-4 h-1.5 w-1.5 rounded-full bg-white/45" />
+      <div className="absolute -right-4 -top-4 h-12 w-12 rounded-full bg-white/20" />
+      <div className="absolute right-6 top-2 h-2 w-2 rotate-45 bg-white/60" />
+      <div className="absolute right-2 top-7 h-2.5 w-2.5 rounded-full bg-accent ring-2 ring-white/50" />
       <div className="absolute inset-x-1.5 bottom-1.5">
         <p className="line-clamp-2 text-[11px] font-extrabold uppercase leading-[1.1] text-white">
           {copy.tier1}
@@ -287,7 +328,7 @@ function VibrantPlayfulPreview({ imageUrl, copy }: { imageUrl: string | undefine
           </p>
         )}
         {copy.badge && (
-          <span className="mt-1 inline-block -rotate-3 rounded bg-accent px-1.5 py-0.5 text-[6.5px] font-extrabold uppercase text-accent-foreground shadow-sm">
+          <span className="mt-1 inline-block w-fit -rotate-3 rounded-md bg-accent px-1.5 py-0.5 text-[6.5px] font-extrabold uppercase text-accent-foreground shadow-md ring-2 ring-white/40">
             {copy.badge}
           </span>
         )}
