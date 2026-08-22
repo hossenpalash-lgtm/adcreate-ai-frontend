@@ -85,7 +85,7 @@ export function IdeaStep({
     setSurprising(true);
     setSurpriseError(null);
     try {
-      const r = await fetchIdeaLabsIdeas();
+      const r = await fetchIdeaLabsIdeas("surprise");
       if (r.ideas.length > 0) {
         onChange(r.ideas[Math.floor(Math.random() * r.ideas.length)]);
       }

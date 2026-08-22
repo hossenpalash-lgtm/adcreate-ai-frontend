@@ -362,8 +362,9 @@ export function suggestHashtags(itemDescription: string): Promise<{ hashtags: st
   });
 }
 
-export function fetchIdeaLabsIdeas(): Promise<{ ideas: string[] }> {
-  return apiFetch<{ ideas: string[] }>("/ads/idea-labs");
+export function fetchIdeaLabsIdeas(mode?: "surprise"): Promise<{ ideas: string[] }> {
+  const params = mode ? `?${new URLSearchParams({ mode })}` : "";
+  return apiFetch<{ ideas: string[] }>(`/ads/idea-labs${params}`);
 }
 
 export type VisualDirection = "clean_premium" | "bold_energetic" | "warm_lifestyle";

@@ -69,6 +69,22 @@ const CONTENT_TYPE_SEARCH_QUERY: Record<string, string> = {
   "educational tip": "teaching learning knowledge",
   "customer story": "customer service experience",
   "behind the scenes": "team workspace process",
+  // Added for Step 1's "Surprise me" engagement formats (see
+  // SURPRISE_FORMATS in main.py) — each anchor was hand-checked against
+  // real Pexels results the same way Announcement's was, so a Surprise
+  // Me pick renders as its own genuine concept, not a generic photo.
+  question: "person asking question",
+  "this or that": "two choices hands",
+  "myth vs fact": "magnifying glass research",
+  "fun fact": "lightbulb idea",
+  quote: "handwritten quote notebook",
+  "quick tip": "notebook tip pen",
+  checklist: "checklist notepad pen",
+  "before & after": "makeover transformation",
+  "did you know": "magnifying glass discovery",
+  "industry insight": "business chart analytics",
+  "conversation starter": "people talking coffee chat",
+  "mini story": "storytelling open book",
 };
 
 // Announcement is a real exception to "append a style mood word": hand
