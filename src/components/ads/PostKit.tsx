@@ -1,7 +1,7 @@
 import { AlertCircle, Calendar, Check, Download, Pencil } from "lucide-react";
 import { useState } from "react";
 import type { ApiAdCaptionVariant, CaptionLength, CaptionTone } from "@/lib/api";
-import type { Box, BrandKit, EditOptions } from "@/lib/canvas-text";
+import { deriveOnImageHeadline, type Box, type BrandKit, type EditOptions } from "@/lib/canvas-text";
 import { CaptionPicker } from "./CaptionPicker";
 import { CaptionStyleControls } from "./CaptionStyleControls";
 import { CarouselBuilder } from "./CarouselBuilder";
@@ -60,6 +60,8 @@ export function PostKit({
   brandKit,
   editOptions,
   whatsappMessage,
+  cta,
+  visualDirection,
   error,
   onReset,
 }: {
@@ -103,10 +105,20 @@ export function PostKit({
   brandKit: BrandKit;
   editOptions: EditOptions;
   whatsappMessage: string;
+  cta?: string;
+  visualDirection?: string;
   error: string | null;
   onReset: () => void;
 }) {
   const hashtagsAdded = editedCaption.includes("#");
+  // Carousel slides mirror what's actually baked onto the main preview
+  // — the short on-image headline, never the full editable caption —
+  // so a downloaded carousel matches the hero image the user is looking
+  // at, not a differently-sized render of the raw caption text.
+  const carouselText = {
+    headline: deriveOnImageHeadline(whatsappMessage, captions[selectedCaptionIndex]?.facebook_caption ?? editedCaption),
+    cta,
+  };
   const [editorOpen, setEditorOpen] = useState(false);
 
   return (
@@ -206,7 +218,13 @@ export function PostKit({
 
       <HashtagPicker itemDescription={itemDescription} onAppend={onAppendHashtag} />
 
-      <CarouselBuilder images={images} caption={editedCaption} brandKit={brandKit} editOptions={editOptions} />
+      <CarouselBuilder
+        images={images}
+        text={carouselText}
+        brandKit={brandKit}
+        editOptions={editOptions}
+        visualDirection={visualDirection}
+      />
 
       <div className="mb-6 rounded-2xl bg-card p-4" style={{ boxShadow: "var(--shadow-card)" }}>
         <p className="mb-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground">WhatsApp message</p>

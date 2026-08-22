@@ -8,7 +8,7 @@ import {
   type ApiAdGenerateResponse,
   type ApiContentPlanPost,
 } from "@/lib/api";
-import { compositeImage, type BrandKit } from "@/lib/canvas-text";
+import { compositeImage, deriveOnImageHeadline, type BrandKit } from "@/lib/canvas-text";
 import { CaptionPicker } from "./CaptionPicker";
 import { ImageVariantPicker } from "./ImageVariantPicker";
 
@@ -73,7 +73,12 @@ export function PlanDayCard({
 
   useEffect(() => {
     if (!hasResult) return;
-    compositeImage(images[selectedImageIndex], captions[selectedCaptionIndex].facebook_caption, brandKit)
+    const variant = captions[selectedCaptionIndex];
+    compositeImage(
+      images[selectedImageIndex],
+      { headline: deriveOnImageHeadline(variant.whatsapp_message, variant.facebook_caption) },
+      brandKit,
+    )
       .then(setCompositedUrl)
       .catch(() => {});
     // eslint-disable-next-line react-hooks/exhaustive-deps

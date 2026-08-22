@@ -14,7 +14,14 @@ import {
   type CaptionTone,
   type VisualDirection,
 } from "@/lib/api";
-import { compositeImage, type Box, type BrandKit, type EditOptions } from "@/lib/canvas-text";
+import {
+  compositeImage,
+  deriveOnImageHeadline,
+  type Box,
+  type BrandKit,
+  type CreativeText,
+  type EditOptions,
+} from "@/lib/canvas-text";
 import { findVisualDirection, PLATFORM_OPTIONS, type Platform } from "@/lib/social-wizard";
 import { GenerationProgress } from "./GenerationProgress";
 import { IdeaStep } from "./IdeaStep";
@@ -124,15 +131,42 @@ export function SinglePostForm({
   }, [selectedCaptionIndex, captions]);
 
   useEffect(() => {
-    if (step !== "result" || images.length === 0 || !editedCaption) return;
+    if (step !== "result" || images.length === 0) return;
+    const variant = captions[selectedCaptionIndex];
+    if (!variant) return;
+    // The text baked onto the image is deliberately NOT editedCaption
+    // (the full, user-editable social caption) — it's the already
+    // -generated WhatsApp message, a genuinely short standalone line, so
+    // a long caption can never end up rendered oversized on the photo.
+    // Editing the caption below only ever changes the caption; it no
+    // longer touches the image.
+    const headline = deriveOnImageHeadline(variant.whatsapp_message, variant.facebook_caption);
+    const creativeText: CreativeText = {
+      headline,
+      cta: understanding?.offer?.trim() || undefined,
+    };
     const requestId = ++compositeRequestRef.current;
-    compositeImage(images[selectedImageIndex], editedCaption, brandKit, editOptions)
+    compositeImage(images[selectedImageIndex], creativeText, brandKit, editOptions, visualDirection)
       .then((url) => {
         if (compositeRequestRef.current === requestId) setCompositedUrl(url);
       })
       .catch(() => {});
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [step, images, selectedImageIndex, editedCaption, brandKit, fontScale, barColorOverride, showLogo, textBox, logoBox]);
+  }, [
+    step,
+    images,
+    selectedImageIndex,
+    captions,
+    selectedCaptionIndex,
+    understanding,
+    visualDirection,
+    brandKit,
+    fontScale,
+    barColorOverride,
+    showLogo,
+    textBox,
+    logoBox,
+  ]);
 
   const handleFileChange = (f: File | null) => {
     setPreviewUrl((prev) => {
@@ -424,6 +458,8 @@ export function SinglePostForm({
           brandKit={brandKit}
           editOptions={editOptions}
           whatsappMessage={captions[selectedCaptionIndex]?.whatsapp_message ?? ""}
+          cta={understanding?.offer?.trim() || undefined}
+          visualDirection={visualDirection}
           error={error}
           onReset={handleReset}
         />
