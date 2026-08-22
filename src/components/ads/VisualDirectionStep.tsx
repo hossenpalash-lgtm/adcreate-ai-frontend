@@ -53,6 +53,24 @@ const STYLE_QUERY_MODIFIER: Record<string, string> = {
   vibrant_playful: "colorful playful",
 };
 
+// Hand-picked semantic anchor per content type — used as the search
+// subject instead of the bare content-type string when the idea states
+// no concrete subject. The literal category name alone ("Poll", "Behind
+// the scenes") is a weak, ambiguous Pexels query; a phrase describing
+// what that category actually LOOKS like keeps every style's photo
+// clearly recognizable as belonging to the same category even after a
+// style mood word is appended. Content types not listed here (e.g.
+// "Special offer", which already searches well as-is) fall back to the
+// literal content type unchanged.
+const CONTENT_TYPE_SEARCH_QUERY: Record<string, string> = {
+  poll: "people voting survey",
+  announcement: "business announcement reveal",
+  "product launch": "product showcase display",
+  "educational tip": "teaching learning knowledge",
+  "customer story": "customer service experience",
+  "behind the scenes": "team workspace process",
+};
+
 // Pexels has no relevance/caption metadata we can score candidates
 // against (the proxy only returns id/thumbnail/full url/photographer —
 // see /ads/stock-photos in main.py), so a true per-candidate semantic
@@ -437,11 +455,14 @@ export function VisualDirectionStep({
   // a fresh generation id invalidates any still-in-flight search from a
   // previous idea so a slow response can't overwrite a newer one. The
   // real subject anchors the search when there is one; when there isn't,
-  // the post's own content type does instead (see the top-of-file
-  // comment) — either way something real is always searched, so this is
-  // keyed on whichever of the two is actually driving the query.
+  // a hand-picked semantic anchor for the post's own content type does
+  // instead (CONTENT_TYPE_SEARCH_QUERY, see top-of-file comment) —
+  // either way something real and category-relevant is always searched,
+  // so this is keyed on whichever of the two is actually driving the
+  // query.
   useEffect(() => {
-    const searchSubject = visualSubject || contentType;
+    const searchSubject =
+      visualSubject || CONTENT_TYPE_SEARCH_QUERY[contentType.toLowerCase().trim()] || contentType;
     const key = searchSubject;
     if (lastFetchedKeyRef.current === key) return;
     lastFetchedKeyRef.current = key;
