@@ -318,7 +318,13 @@ export async function compositeImage(
   editOptions?: EditOptions,
   visualDirection?: string,
 ): Promise<string> {
-  const img = await loadImage(`data:image/png;base64,${base64}`);
+  // Existing callers always pass a raw PNG base64 payload (AI-generated
+  // images are always PNG). A caller can also pass a full data: URL
+  // directly (e.g. the carousel builder including a user's own uploaded
+  // JPEG/PNG) — detected here so its real mime type is preserved instead
+  // of being mislabeled as PNG.
+  const src = base64.startsWith("data:") ? base64 : `data:image/png;base64,${base64}`;
+  const img = await loadImage(src);
 
   const canvas = document.createElement("canvas");
   canvas.width = img.naturalWidth;
