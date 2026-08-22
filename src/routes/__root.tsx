@@ -20,6 +20,7 @@ import { PunqleLogo } from "../components/PunqleLogo";
 import { LegalFooter } from "../components/LegalFooter";
 import { BillingPanel } from "../components/ads/BillingPanel";
 import { BrandKitPanel } from "../components/ads/BrandKitPanel";
+import { MetaConnectPanel } from "../components/ads/MetaConnectPanel";
 import { ProductCatalogPanel } from "../components/ads/ProductCatalogPanel";
 import { ReferralPanel } from "../components/ads/ReferralPanel";
 import { Sidebar, type NavTab } from "../components/Sidebar";
@@ -145,6 +146,7 @@ function RootComponent() {
   const [brandKitOpen, setBrandKitOpen] = useState(false);
   const [productCatalogOpen, setProductCatalogOpen] = useState(false);
   const [referralOpen, setReferralOpen] = useState(false);
+  const [metaConnectOpen, setMetaConnectOpen] = useState(false);
   // Lazy initializer (runs synchronously at first render, before any
   // effect) rather than a useEffect checking window.location.search —
   // the router normalizes the URL and strips unrecognised params like
@@ -200,6 +202,15 @@ function RootComponent() {
   useEffect(() => {
     if (new URLSearchParams(window.location.search).has("shopify")) {
       setProductCatalogOpen(true);
+    }
+  }, []);
+
+  // Same round-trip pattern as the Shopify OAuth callback above — Meta's
+  // callback redirects back to "/" with ?meta=connected|pick-page|error.
+  // MetaConnectPanel itself reads and clears the param.
+  useEffect(() => {
+    if (new URLSearchParams(window.location.search).has("meta")) {
+      setMetaConnectOpen(true);
     }
   }, []);
 
@@ -267,6 +278,7 @@ function RootComponent() {
               onOpenProductCatalog={() => setProductCatalogOpen(true)}
               onOpenReferral={() => setReferralOpen(true)}
               onOpenBilling={() => setBillingOpen(true)}
+              onOpenMetaConnect={() => setMetaConnectOpen(true)}
               onSignOut={() => signOut()}
             />
             <div className="mx-auto flex w-full max-w-md flex-1 flex-col lg:max-w-3xl">
@@ -277,6 +289,7 @@ function RootComponent() {
             <ProductCatalogPanel open={productCatalogOpen} onClose={() => setProductCatalogOpen(false)} />
             <ReferralPanel open={referralOpen} onClose={() => setReferralOpen(false)} />
             <BillingPanel open={billingOpen} onClose={() => setBillingOpen(false)} />
+            <MetaConnectPanel open={metaConnectOpen} onClose={() => setMetaConnectOpen(false)} />
           </>
         )}
       </div>

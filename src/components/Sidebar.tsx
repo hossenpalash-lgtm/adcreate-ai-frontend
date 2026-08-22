@@ -3,6 +3,7 @@ import {
   Calendar,
   Clock,
   CreditCard,
+  Facebook,
   Gift,
   Image as ImageIcon,
   Lock,
@@ -58,6 +59,7 @@ export function Sidebar({
   onOpenProductCatalog,
   onOpenReferral,
   onOpenBilling,
+  onOpenMetaConnect,
   onSignOut,
 }: {
   tab: NavTab;
@@ -66,6 +68,7 @@ export function Sidebar({
   onOpenProductCatalog: () => void;
   onOpenReferral: () => void;
   onOpenBilling: () => void;
+  onOpenMetaConnect: () => void;
   onSignOut: () => void;
 }) {
   const scrolled = useScrolled();
@@ -174,6 +177,13 @@ export function Sidebar({
           >
             <Package className="h-3.5 w-3.5" />
             Product Catalog
+          </button>
+          <button
+            onClick={onOpenMetaConnect}
+            className="flex items-center gap-3 rounded-xl px-3 py-2 text-[13px] font-medium text-muted-foreground hover:bg-secondary"
+          >
+            <Facebook className="h-3.5 w-3.5" />
+            Social Accounts
           </button>
 
           <span className="mb-1 mt-4 px-3 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/70">
@@ -285,6 +295,13 @@ export function Sidebar({
               className="flex h-9 w-9 items-center justify-center rounded-full text-secondary-foreground hover:bg-secondary"
             >
               <Package className="h-4 w-4" />
+            </button>
+            <button
+              onClick={onOpenMetaConnect}
+              aria-label="Social Accounts"
+              className="flex h-9 w-9 items-center justify-center rounded-full text-secondary-foreground hover:bg-secondary"
+            >
+              <Facebook className="h-4 w-4" />
             </button>
             <button
               onClick={onOpenReferral}

@@ -1,4 +1,4 @@
-import { AlertCircle, Calendar, Check, Download, Pencil } from "lucide-react";
+import { AlertCircle, Check, Download, Pencil } from "lucide-react";
 import { useState } from "react";
 import type { ApiAdCaptionVariant, CaptionLength, CaptionTone } from "@/lib/api";
 import { deriveOnImageHeadline, type Box, type BrandKit, type EditOptions } from "@/lib/canvas-text";
@@ -8,6 +8,7 @@ import { CarouselBuilder } from "./CarouselBuilder";
 import { DragDropEditor } from "./DragDropEditor";
 import { HashtagPicker } from "./HashtagPicker";
 import { ImageVariantPicker } from "./ImageVariantPicker";
+import { PublishToMeta } from "./PublishToMeta";
 import { QuickEditPanel } from "./QuickEditPanel";
 import { TranslateCaptions } from "./TranslateCaptions";
 
@@ -17,8 +18,7 @@ import { TranslateCaptions } from "./TranslateCaptions";
 // Kit" with a real (not fabricated) readiness checklist and tone/length
 // caption controls on top. No creative score or "best time" section —
 // nothing in the backend calculates either, and the brief is explicit
-// about not fabricating metrics. Schedule is a disabled placeholder since
-// no Facebook/Instagram posting feature exists yet.
+// about not fabricating metrics.
 export function PostKit({
   compositedUrl,
   textBox,
@@ -248,14 +248,7 @@ export function PostKit({
         Download image
       </a>
 
-      <button
-        disabled
-        title="Coming soon"
-        className="mb-3 flex w-full items-center justify-center gap-2 rounded-full bg-secondary px-5 py-3 text-sm font-semibold text-secondary-foreground opacity-60 disabled:cursor-not-allowed"
-      >
-        <Calendar className="h-4 w-4" />
-        Schedule — coming soon
-      </button>
+      <PublishToMeta compositedUrl={compositedUrl} caption={editedCaption} />
 
       <button
         onClick={onReset}

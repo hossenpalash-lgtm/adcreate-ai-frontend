@@ -480,6 +480,80 @@ export function syncShopifyProducts(): Promise<{ products: ApiImportedProduct[] 
   return apiFetch<{ products: ApiImportedProduct[] }>("/shopify/sync", { method: "POST" });
 }
 
+export function getMetaConnectUrl(): Promise<{ authorize_url: string }> {
+  return apiFetch<{ authorize_url: string }>("/meta/connect-url");
+}
+
+export interface ApiMetaStatus {
+  connected: boolean;
+  page_name: string | null;
+  ig_username: string | null;
+}
+
+export function fetchMetaStatus(): Promise<ApiMetaStatus> {
+  return apiFetch<ApiMetaStatus>("/meta/status");
+}
+
+export interface ApiMetaAvailablePage {
+  page_id: string;
+  page_name: string;
+  has_instagram: boolean;
+  ig_username: string | null;
+}
+
+export function fetchMetaAvailablePages(): Promise<{ pages: ApiMetaAvailablePage[] }> {
+  return apiFetch<{ pages: ApiMetaAvailablePage[] }>("/meta/available-pages");
+}
+
+export function selectMetaPage(pageId: string): Promise<{ connected: boolean; page_name: string; ig_username: string | null }> {
+  return apiFetch("/meta/select-page", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ page_id: pageId }),
+  });
+}
+
+export function disconnectMeta(): Promise<void> {
+  return apiFetch<void>("/meta/disconnect", { method: "DELETE" });
+}
+
+export interface ApiMetaPlatformResult {
+  posted: boolean;
+  post_id?: string;
+  media_id?: string;
+  error?: string;
+}
+
+export interface ApiMetaPublishResponse {
+  facebook?: ApiMetaPlatformResult;
+  instagram?: ApiMetaPlatformResult;
+}
+
+// compositedDataUrl is a canvas toDataURL() result ("data:image/...;base64,...")
+// — parsed here (not passed pre-split) so every call site can just hand over
+// PostKit's existing compositedUrl prop as-is, same as CarouselBuilder does.
+export function publishToMeta(
+  compositedDataUrl: string,
+  caption: string,
+  postToFacebook: boolean,
+  postToInstagram: boolean,
+): Promise<ApiMetaPublishResponse> {
+  const match = compositedDataUrl.match(/^data:([^;]+);base64,(.+)$/);
+  if (!match) {
+    return Promise.reject(new Error("Couldn't read the generated image."));
+  }
+  const [, mimeType, base64] = match;
+  const formData = new FormData();
+  formData.append("file", base64ToFile(base64, mimeType, "post.jpg"));
+  formData.append("caption", caption);
+  formData.append("post_to_facebook", String(postToFacebook));
+  formData.append("post_to_instagram", String(postToInstagram));
+  return apiFetch<ApiMetaPublishResponse>("/meta/publish", {
+    method: "POST",
+    body: formData,
+  });
+}
+
 export type SubscriptionTier = "starter" | "growth" | "pro";
 
 export interface ApiSubscriptionStatus {
