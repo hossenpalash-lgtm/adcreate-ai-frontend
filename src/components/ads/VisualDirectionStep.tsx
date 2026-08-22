@@ -23,13 +23,19 @@ import {
 // "<subject> <mood words>", never the mood words alone, and if that
 // combination returns nothing, the style falls back to the bare
 // validated subject rather than drifting onto an unrelated photo (see
-// resolveBaseQuery/fetchStylePhotos). Deliberately NOT a live Gemini
-// regeneration — that would mean extra PAID image-generation calls (and
-// a 30-45s wait) every time anyone reaches this step, including everyone
-// who never finishes generating. When there's no real subject, every
-// style falls back to its own flat CSS gradient rather than a photo —
-// never an empty box, never a random stock object standing in for a
-// subject that was never stated.
+// resolveBaseQuery/fetchStylePhotos). When the idea states no concrete
+// subject (most of the app's own "Popular ideas" starters — e.g.
+// "Create a promotional post for my special offer" — land here), the
+// search subject falls back to the post's own content type ("Special
+// offer", "Customer story", ...) rather than skipping the search
+// entirely: that's exactly the same word already shown as the real
+// headline text, so it adds no invented fact, just gives every card a
+// real, on-topic photo instead of a flat color swatch. Each style still
+// falls back to its own CSS gradient only if even that content-type
+// search comes back empty. Deliberately NOT a live Gemini regeneration
+// — that would mean extra PAID image-generation calls (and a 30-45s
+// wait) every time anyone reaches this step, including everyone who
+// never finishes generating.
 const ALL_DIRECTIONS = [...VISUAL_DIRECTIONS, ...MORE_VISUAL_DIRECTIONS];
 
 // Short, safe mood adjectives only — never a noun that could itself
@@ -382,27 +388,24 @@ const STYLE_PREVIEWS: Record<string, (props: { imageUrl: string | undefined; cop
 function StylePreview({
   opt,
   previewUrl,
-  hasSubject,
   loading,
   copy,
 }: {
   opt: VisualDirectionOption;
   previewUrl: string | undefined;
-  hasSubject: boolean;
   loading: boolean;
   copy: PreviewCopy;
 }) {
   const Preview = STYLE_PREVIEWS[opt.id] ?? CleanPremiumPreview;
-  // Only a real, idea-relevant photo is ever shown as the image — never
-  // the pool's own no-subject fallback search result, since that would
-  // still be "a random stock object" standing in for a subject that was
-  // never stated. No subject means every style renders its own layered
-  // graphic composition instead.
-  const imageUrl = hasSubject ? previewUrl : undefined;
+  // previewUrl is only ever a real search result for the real subject
+  // (or, when there's none, the post's own content type — see
+  // fetchStylePhotos). Each style's own component falls back to its
+  // layered CSS gradient whenever this is undefined, whether that's
+  // because the search is still in flight or came back genuinely empty.
   return (
     <div className="relative h-full w-full">
-      <Preview imageUrl={imageUrl} copy={copy} />
-      {hasSubject && loading && !previewUrl && <div className="absolute inset-0 animate-pulse bg-black/10" />}
+      <Preview imageUrl={previewUrl} copy={copy} />
+      {loading && !previewUrl && <div className="absolute inset-0 animate-pulse bg-black/10" />}
     </div>
   );
 }
@@ -449,18 +452,20 @@ export function VisualDirectionStep({
   // One validated base query per idea, then one style-appropriate search
   // per style (including the 2 behind "Show more") built on top of it —
   // a fresh generation id invalidates any still-in-flight search from a
-  // previous idea so a slow response can't overwrite a newer one. Keyed
-  // on visualSubject (not the raw idea text) since that's what actually
-  // determines the query now.
+  // previous idea so a slow response can't overwrite a newer one. The
+  // real subject anchors the search when there is one; when there isn't,
+  // the post's own content type does instead (see the top-of-file
+  // comment) — either way something real is always searched, so this is
+  // keyed on whichever of the two is actually driving the query.
   useEffect(() => {
-    const key = visualSubject;
+    const searchSubject = visualSubject || contentType;
+    const key = searchSubject;
     if (lastFetchedKeyRef.current === key) return;
     lastFetchedKeyRef.current = key;
     const generation = ++generationRef.current;
     setPhotosByStyle({});
-    if (!visualSubject) return;
     setLoading(true);
-    resolveBaseQuery(visualSubject, contentType)
+    resolveBaseQuery(searchSubject, contentType)
       .then((baseQuery) => {
         if (generationRef.current !== generation || !baseQuery) return {} as Record<string, string | undefined>;
         return fetchStylePhotos(baseQuery, ALL_DIRECTIONS.map((d) => d.id));
@@ -474,6 +479,7 @@ export function VisualDirectionStep({
             visualSubject,
             offer,
             contentType,
+            searchSubject,
             photosByStyle: photos,
             recommended,
           });
@@ -484,7 +490,7 @@ export function VisualDirectionStep({
         setLoading(false);
       });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [visualSubject]);
+  }, [visualSubject, contentType]);
 
   return (
     <div className="flex flex-col items-center text-center">
@@ -509,7 +515,6 @@ export function VisualDirectionStep({
                 <StylePreview
                   opt={opt}
                   previewUrl={photosByStyle[opt.id]}
-                  hasSubject={!!visualSubject}
                   loading={loading}
                   copy={copy}
                 />
