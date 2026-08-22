@@ -69,35 +69,32 @@ function pickFromPool(pool: ApiStockPhotoResult[], opt: VisualDirectionOption): 
 // GPT-derived data (content type / stated offer) whenever they add
 // something tier1 doesn't already say — e.g. "20% off our new coffee
 // beans" genuinely has all three: COFFEE BEANS / SPECIAL OFFER / 20%
-// OFF. When the idea is promotional but states no concrete offer detail
-// ("Create a promotional post for my special offer"), tier2/badge fall
-// back to generic, evergreen promotional phrasing ("Limited time only" /
-// "Special offer") — template chrome showing what an offer post in this
-// style *could* say, the same way a template gallery shows placeholder
-// copy, never a specific invented number (a fake "30% off" would read as
-// a real, actionable claim about this business, which the generic
-// phrases don't). This fallback only fires when the content itself is
-// actually promotional (PROMO_CONTENT_TYPES) — an announcement or
-// educational post with no subject still correctly shows just tier1,
-// since "Limited time only" would be a genuine mismatch there, not
-// harmless flavor.
+// OFF. When the idea states no concrete subject/offer beyond its bare
+// content type, tier2 falls back to a fixed, safe supporting phrase for
+// that content type (SAFE_TAGLINE_BY_CONTENT_TYPE) — never an invented
+// fact or urgency claim. A content type with no entry there (including
+// "Special offer") shows tier1 alone: for Special Offer specifically, a
+// deal isn't inherently time-limited, so writing "Limited time only"
+// without the user ever saying so would be a fabricated claim, not
+// harmless template flavor. badge only ever shows real, user-stated
+// offer data — never a generic fallback — since a generic "Special
+// offer" badge would just duplicate tier1 when there's no real subject.
 interface PreviewCopy {
   tier1: string;
   tier2: string | null;
   badge: string | null;
-  // True when tier2 is the generic fallback, not real content-type data
-  // — lets a style swap in its own personality-appropriate wording
-  // (e.g. Warm & Lifestyle's softer "Just for you") without ever
-  // touching real data.
-  tier2IsGeneric: boolean;
 }
 
-const PROMO_CONTENT_TYPES = ["special offer", "sale", "discount", "promo", "promotion"];
-
-function isPromoContentType(contentType: string): boolean {
-  const lower = contentType.toLowerCase();
-  return PROMO_CONTENT_TYPES.some((p) => lower.includes(p));
-}
+// Safe, non-inventing supporting phrases — describe the content TYPE
+// itself, never a specific unstated detail (no "checklist", no "office
+// team", no "client consultation", no fabricated urgency). Keyed by the
+// backend's content_type string, lowercased.
+const SAFE_TAGLINE_BY_CONTENT_TYPE: Record<string, string> = {
+  "product launch": "NOW AVAILABLE",
+  "educational tip": "QUICK & PRACTICAL",
+  "behind the scenes": "A LOOK BEHIND THE WORK",
+  "customer story": "REAL CUSTOMER EXPERIENCE",
+};
 
 function buildPreviewCopy(visualSubject: string, offer: string, contentType: string): PreviewCopy {
   const tier1 = (visualSubject || contentType).toUpperCase();
@@ -106,10 +103,9 @@ function buildPreviewCopy(visualSubject: string, offer: string, contentType: str
   const offerUpper = offer.toUpperCase();
   const realBadge = offerUpper && offerUpper !== tier1 && offerUpper !== realTier2 ? offerUpper : null;
 
-  const promo = isPromoContentType(contentType);
-  const tier2 = realTier2 ?? (promo ? "LIMITED TIME ONLY" : null);
-  const badge = realBadge ?? (promo ? "SPECIAL OFFER" : null);
-  return { tier1, tier2, badge, tier2IsGeneric: !realTier2 };
+  const genericTagline = SAFE_TAGLINE_BY_CONTENT_TYPE[contentType.toLowerCase().trim()] ?? null;
+  const tier2 = realTier2 ?? genericTagline;
+  return { tier1, tier2, badge: realBadge };
 }
 
 // Each style renders a genuinely different MINIATURE SOCIAL-CREATIVE
@@ -222,11 +218,6 @@ function BoldEnergeticPreview({ imageUrl, copy }: { imageUrl: string | undefined
 // caption block (serif headline, italic support line) sitting low and
 // centered the way a magazine photo credit/caption does.
 function WarmLifestylePreview({ imageUrl, copy }: { imageUrl: string | undefined; copy: PreviewCopy }) {
-  // The one place a style swaps in its own personality wording — only
-  // for the generic fallback (never overriding real content-type data)
-  // — "Just for you" reads warmer than "Limited time only" and matches
-  // this style's softer, human tone.
-  const tier2Text = copy.tier2IsGeneric && copy.tier2 === "LIMITED TIME ONLY" ? "Just for you" : copy.tier2;
   return (
     <div className="relative h-full w-full overflow-hidden">
       {imageUrl ? (
@@ -249,7 +240,7 @@ function WarmLifestylePreview({ imageUrl, copy }: { imageUrl: string | undefined
         <p className="font-display line-clamp-2 max-w-[90%] text-[10px] font-bold leading-[1.15] text-[#fdf3e7]">
           {copy.tier1}
         </p>
-        {tier2Text && <p className="line-clamp-1 text-[6.5px] italic text-[#fdf3e7]/85">{tier2Text}</p>}
+        {copy.tier2 && <p className="line-clamp-1 text-[6.5px] italic text-[#fdf3e7]/85">{copy.tier2}</p>}
         {copy.badge && (
           <span className="mt-1 inline-block w-fit rounded-full bg-[#fdf3e7]/90 px-1.5 py-0.5 text-[5.5px] font-semibold uppercase tracking-wide text-[#5a3a1e]">
             {copy.badge}
