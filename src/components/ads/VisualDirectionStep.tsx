@@ -64,12 +64,26 @@ const STYLE_QUERY_MODIFIER: Record<string, string> = {
 // literal content type unchanged.
 const CONTENT_TYPE_SEARCH_QUERY: Record<string, string> = {
   poll: "people voting survey",
-  announcement: "business announcement reveal",
+  announcement: "megaphone",
   "product launch": "product showcase display",
   "educational tip": "teaching learning knowledge",
   "customer story": "customer service experience",
   "behind the scenes": "team workspace process",
 };
+
+// Announcement is a real exception to "append a style mood word": hand
+// -checked the actual Pexels results first (not assumed) and found its
+// genuinely on-topic photos (megaphones, speech-bubble props, spotlight
+// stages, studio mics) are a small, tightly-clustered set — appending
+// ANY style adjective ("premium elegant", "bold vibrant"...) reliably
+// dragged the top result into unrelated abstract art or product shots
+// instead of narrowing it, the opposite of what the modifier does for a
+// concrete noun like "coffee beans". So Announcement searches ONCE and
+// spreads that one on-topic pool across the 5 styles — still 5
+// different photos, all clearly announcement-themed — and lets each
+// style's own existing filter/composition (already different per
+// style) carry the visual-treatment difference instead.
+const SINGLE_QUERY_CONTENT_TYPES = new Set(["announcement"]);
 
 // Pexels has no relevance/caption metadata we can score candidates
 // against (the proxy only returns id/thumbnail/full url/photographer —
@@ -106,8 +120,23 @@ async function resolveBaseQuery(subject: string, contentType: string): Promise<s
 // call) so every style still gets a real, on-topic photo even when
 // Pexels has nothing for "subject + mood". A light dedup pass across
 // the combined candidates keeps the 5 cards showing 5 different photos
-// rather than accidentally repeating one.
-async function fetchStylePhotos(baseQuery: string, styleIds: string[]): Promise<Record<string, string | undefined>> {
+// rather than accidentally repeating one. `applyModifiers = false`
+// (only used for SINGLE_QUERY_CONTENT_TYPES) instead runs ONE search
+// and spreads its results across the styles by position — still 5
+// different photos, no modifier-induced drift.
+async function fetchStylePhotos(
+  baseQuery: string,
+  styleIds: string[],
+  applyModifiers = true
+): Promise<Record<string, string | undefined>> {
+  if (!applyModifiers) {
+    const { results } = await searchStockPhotos(baseQuery).catch(() => ({ results: [] as ApiStockPhotoResult[] }));
+    const result: Record<string, string | undefined> = {};
+    styleIds.forEach((id, i) => {
+      result[id] = results.length > 0 ? results[i % results.length]?.thumbnail_url : undefined;
+    });
+    return result;
+  }
   const styled = await Promise.all(
     styleIds.map((id) => {
       const modifier = STYLE_QUERY_MODIFIER[id] ?? "";
@@ -469,10 +498,11 @@ export function VisualDirectionStep({
     const generation = ++generationRef.current;
     setPhotosByStyle({});
     setLoading(true);
+    const applyModifiers = visualSubject ? true : !SINGLE_QUERY_CONTENT_TYPES.has(contentType.toLowerCase().trim());
     resolveBaseQuery(searchSubject, contentType)
       .then((baseQuery) => {
         if (generationRef.current !== generation || !baseQuery) return {} as Record<string, string | undefined>;
-        return fetchStylePhotos(baseQuery, ALL_DIRECTIONS.map((d) => d.id));
+        return fetchStylePhotos(baseQuery, ALL_DIRECTIONS.map((d) => d.id), applyModifiers);
       })
       .then((photos) => {
         if (generationRef.current !== generation) return;
